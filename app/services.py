@@ -35,13 +35,13 @@ class PDFService:
             pdf_path.unlink()
 
     @classmethod
-    def process_pdf(cls, content: bytes, filename: str) -> dict:
+    def process_pdf(cls, content: bytes, filename: str, custom_title: str = None) -> dict:
         doc_id = cls.generate_id()
         pdf_path = cls.save_pdf(content, doc_id)
         
         try:
             pages = cls.convert_to_images(pdf_path, doc_id)
-            title = filename.replace(".pdf", "")
+            title = custom_title if custom_title else filename.replace(".pdf", "")
             return documents.add(doc_id, title, pages)
         except Exception as e:
             cls.cleanup(pdf_path)

@@ -1,4 +1,5 @@
-from fastapi import APIRouter, UploadFile, File, HTTPException
+from fastapi import APIRouter, UploadFile, File, Form, HTTPException
+from typing import Optional
 from fastapi.responses import FileResponse, JSONResponse
 from .config import settings
 from .models import documents
@@ -17,12 +18,16 @@ async def upload_page():
     return FileResponse(settings.STATIC_DIR / "upload.html")
 
 @router.get("/reader/{doc_id}")
-async def reader_page(doc_id: str):
+async def reader(doc_id: str):
     return FileResponse(settings.STATIC_DIR / "reader.html")
+
+@router.get("/gallery")
+async def gallery():
+    return FileResponse(settings.STATIC_DIR / "gallery.html")
 
 # API
 @router.post("/api/upload")
-async def upload_pdf(file: UploadFile = File(...)):
+async def upload_pdf(file: UploadFile = File(...), title: Optional[str] = Form(None)):
     if not file.filename.lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Only PDF files are allowed")
     
@@ -30,8 +35,11 @@ async def upload_pdf(file: UploadFile = File(...)):
     if len(content) > settings.MAX_FILE_SIZE:
         raise HTTPException(status_code=400, detail="File too large (max 50MB)")
     
+    # Utiliser le titre personnalisé ou le nom du fichier
+    custom_title = title if title else None
+    
     try:
-        doc = pdf_service.process_pdf(content, file.filename)
+        doc = pdf_service.process_pdf(content, file.filename, custom_title)
         return JSONResponse(doc)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Conversion failed: {str(e)}")

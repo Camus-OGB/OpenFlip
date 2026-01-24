@@ -13,9 +13,9 @@
                         primary: {
                             50: '#faf5ff',
                             100: '#f3e8ff',
-                            500: '#a855f7',
-                            600: '#9333ea',
-                            700: '#7c3aed',
+                            500: '#c084fc',
+                            600: '#a855f7',
+                            700: '#9333ea',
                         }
                     }
                 }
@@ -33,10 +33,10 @@
                 </svg>
                 OpenFlip
             </a>
-            <nav class="flex items-center gap-6">
+            <!-- <nav class="flex items-center gap-6">
                 <a href="/upload" class="text-sm text-gray-600 hover:text-gray-900">Créer</a>
                 <a href="https://github.com/openflip/openflip" target="_blank" class="text-sm text-gray-600 hover:text-gray-900">GitHub</a>
-            </nav>
+            </nav> -->
         </div>
     </header>
 
@@ -94,23 +94,18 @@
 
         <!-- Derniers flipbooks -->
         <section id="recent" class="py-16 border-t">
-            <h2 class="text-2xl font-bold text-center mb-8">Derniers flipbooks</h2>
-            <div id="recentList" class="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <div class="flex items-center justify-between mb-8">
+                <h2 class="text-2xl font-bold">Derniers flipbooks</h2>
+                <a href="/gallery" id="viewAllBtn" class="hidden text-sm text-primary-600 hover:text-primary-700 font-medium">
+                    Voir tout →
+                </a>
+            </div>
+            <div id="recentList" class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <!-- Chargé dynamiquement -->
             </div>
             <p id="noRecent" class="text-center text-gray-500 hidden">Aucun flipbook pour le moment.</p>
         </section>
 
-        <!-- CTA -->
-        <section class="py-16 text-center bg-gray-50 -mx-4 px-4 rounded-lg mb-16">
-            <h2 class="text-2xl font-bold">Prêt à essayer ?</h2>
-            <p class="mt-2 text-gray-600">Aucune inscription requise.</p>
-            <div class="mt-6">
-                <a href="/upload" class="inline-flex px-5 py-2.5 bg-primary-600 text-white font-medium rounded-lg hover:bg-primary-700 transition-colors">
-                    Créer un flipbook
-                </a>
-            </div>
-        </section>
     </main>
 
     <script>
@@ -121,6 +116,7 @@
                 
                 const list = document.getElementById('recentList');
                 const noRecent = document.getElementById('noRecent');
+                const viewAllBtn = document.getElementById('viewAllBtn');
                 
                 if (docs.length === 0) {
                     list.classList.add('hidden');
@@ -128,14 +124,22 @@
                     return;
                 }
                 
-                list.innerHTML = docs.map(doc => `
-                    <a href="/reader/${doc.id}" class="group block bg-white border rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
-                        <div class="aspect-[4/3] bg-gray-100 overflow-hidden">
-                            <img src="${doc.thumbnail}" alt="${doc.title}" class="w-full h-full object-cover group-hover:scale-105 transition-transform">
+                // Afficher le bouton "Voir tout" s'il y a plus de 2 flipbooks
+                if (docs.length > 2) {
+                    viewAllBtn.classList.remove('hidden');
+                }
+                
+                // Prendre seulement les 2 derniers
+                const recentDocs = docs.slice(0, 2);
+                
+                list.innerHTML = recentDocs.map(doc => `
+                    <a href="/reader/${doc.id}" class="group block bg-white border rounded-xl overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+                        <div class="aspect-[16/10] bg-gray-100 overflow-hidden">
+                            <img src="${doc.thumbnail}" alt="${doc.title}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
                         </div>
-                        <div class="p-3">
-                            <h3 class="font-medium text-sm truncate">${doc.title}</h3>
-                            <p class="text-xs text-gray-500">${doc.pages} pages</p>
+                        <div class="p-4">
+                            <h3 class="font-semibold text-lg truncate">${doc.title}</h3>
+                            <p class="text-sm text-gray-500 mt-1">${doc.pages} pages</p>
                         </div>
                     </a>
                 `).join('');

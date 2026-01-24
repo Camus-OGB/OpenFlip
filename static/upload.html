@@ -13,9 +13,9 @@
                         primary: {
                             50: '#faf5ff',
                             100: '#f3e8ff',
-                            500: '#a855f7',
-                            600: '#9333ea',
-                            700: '#7c3aed',
+                            500: '#c084fc',
+                            600: '#a855f7',
+                            700: '#9333ea',
                         }
                     }
                 }
@@ -33,27 +33,64 @@
                 </svg>
                 OpenFlip
             </a>
-            <nav class="flex items-center gap-6">
-                <a href="/upload" class="text-sm text-gray-600 hover:text-gray-900">Créer</a>
-                <a href="https://github.com/openflip/openflip" target="_blank" class="text-sm text-gray-600 hover:text-gray-900">GitHub</a>
-            </nav>
         </div>
     </header>
 
     <main class="max-w-xl mx-auto px-4 py-12">
+        <button onclick="history.back()" class="text-sm text-gray-500 hover:text-gray-700 mb-6 flex items-center gap-1">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+            </svg>
+            Retour
+        </button>
         <div class="text-center mb-8">
             <h1 class="text-2xl font-bold">Créer un flipbook</h1>
             <p class="mt-2 text-gray-600">Uploadez un PDF (max 50 Mo)</p>
         </div>
 
-        <!-- Drop Zone -->
-        <div id="dropzone" class="border-2 border-dashed border-gray-300 rounded-xl p-12 text-center cursor-pointer hover:border-primary-500 hover:bg-primary-50 transition-colors">
-            <input type="file" id="fileInput" accept=".pdf" class="hidden">
-            <svg class="w-12 h-12 mx-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
-            </svg>
-            <p class="mt-4 text-gray-600">Glissez un PDF ici ou <span class="text-primary-600 font-medium">parcourir</span></p>
-            <p class="mt-1 text-sm text-gray-400">PDF uniquement, max 50 Mo</p>
+        <!-- Étape 1: Sélection du fichier -->
+        <div id="step1">
+            <div id="dropzone" class="border-2 border-dashed border-gray-300 rounded-xl p-12 text-center cursor-pointer hover:border-primary-500 hover:bg-primary-50 transition-colors">
+                <input type="file" id="fileInput" accept=".pdf" class="hidden">
+                <svg class="w-12 h-12 mx-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+                </svg>
+                <p class="mt-4 text-gray-600">Glissez un PDF ici ou <span class="text-primary-600 font-medium">parcourir</span></p>
+                <p class="mt-1 text-sm text-gray-400">PDF uniquement, max 50 Mo</p>
+            </div>
+        </div>
+
+        <!-- Étape 2: Configuration et conversion -->
+        <div id="step2" class="hidden">
+            <!-- Fichier sélectionné -->
+            <div class="flex items-center gap-4 p-4 bg-gray-50 rounded-lg mb-6">
+                <div class="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center">
+                    <svg class="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p id="fileName" class="font-medium truncate"></p>
+                    <p id="fileSize" class="text-sm text-gray-500"></p>
+                </div>
+                <button id="changeFileBtn" class="text-sm text-gray-500 hover:text-gray-700">
+                    Changer
+                </button>
+            </div>
+
+            <!-- Titre -->
+            <div class="mb-6">
+                <label for="titleInput" class="block text-sm font-medium text-gray-700 mb-2">Titre du flipbook</label>
+                <input type="text" id="titleInput" placeholder="Entrez un titre pour votre flipbook" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-colors">
+            </div>
+
+            <!-- Bouton de conversion -->
+            <button id="convertBtn" class="w-full py-3 px-6 bg-primary-600 text-white font-medium rounded-lg hover:bg-primary-700 transition-colors flex items-center justify-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                </svg>
+                Créer le flipbook
+            </button>
         </div>
 
         <!-- Progress -->
@@ -76,12 +113,22 @@
     <script>
         const dropzone = document.getElementById('dropzone');
         const fileInput = document.getElementById('fileInput');
+        const step1 = document.getElementById('step1');
+        const step2 = document.getElementById('step2');
+        const fileName = document.getElementById('fileName');
+        const fileSize = document.getElementById('fileSize');
+        const titleInput = document.getElementById('titleInput');
+        const convertBtn = document.getElementById('convertBtn');
+        const changeFileBtn = document.getElementById('changeFileBtn');
         const progress = document.getElementById('progress');
         const progressBar = document.getElementById('progressBar');
         const progressText = document.getElementById('progressText');
         const statusText = document.getElementById('statusText');
         const errorDiv = document.getElementById('error');
 
+        let selectedFile = null;
+
+        // Dropzone events
         dropzone.addEventListener('click', () => fileInput.click());
 
         dropzone.addEventListener('dragover', (e) => {
@@ -97,15 +144,27 @@
             e.preventDefault();
             dropzone.classList.remove('border-primary-500', 'bg-primary-50');
             const file = e.dataTransfer.files[0];
-            if (file) handleFile(file);
+            if (file) selectFile(file);
         });
 
         fileInput.addEventListener('change', (e) => {
             const file = e.target.files[0];
-            if (file) handleFile(file);
+            if (file) selectFile(file);
         });
 
-        async function handleFile(file) {
+        // Change file button
+        changeFileBtn.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        // Convert button
+        convertBtn.addEventListener('click', () => {
+            if (selectedFile) {
+                startConversion();
+            }
+        });
+
+        function selectFile(file) {
             if (!file.name.toLowerCase().endsWith('.pdf')) {
                 showError('Seuls les fichiers PDF sont acceptés');
                 return;
@@ -117,50 +176,80 @@
             }
 
             errorDiv.classList.add('hidden');
-            dropzone.classList.add('hidden');
+            selectedFile = file;
+            
+            // Afficher les infos du fichier
+            fileName.textContent = file.name;
+            fileSize.textContent = formatFileSize(file.size);
+            
+            // Pré-remplir le titre avec le nom du fichier (sans extension)
+            const defaultTitle = file.name.replace(/\.pdf$/i, '');
+            titleInput.value = defaultTitle;
+            
+            // Passer à l'étape 2
+            step1.classList.add('hidden');
+            step2.classList.remove('hidden');
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes < 1024) return bytes + ' o';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' Ko';
+            return (bytes / (1024 * 1024)).toFixed(1) + ' Mo';
+        }
+
+        function startConversion() {
+            step2.classList.add('hidden');
             progress.classList.remove('hidden');
 
             const formData = new FormData();
-            formData.append('file', file);
-
-            try {
-                const xhr = new XMLHttpRequest();
-                
-                xhr.upload.addEventListener('progress', (e) => {
-                    if (e.lengthComputable) {
-                        const percent = Math.round((e.loaded / e.total) * 100);
-                        progressBar.style.width = percent + '%';
-                        progressText.textContent = percent + '%';
-                    }
-                });
-
-                xhr.onload = function() {
-                    if (xhr.status === 200) {
-                        const data = JSON.parse(xhr.responseText);
-                        statusText.textContent = 'Conversion terminée !';
-                        setTimeout(() => {
-                            window.location.href = '/reader/' + data.id;
-                        }, 500);
-                    } else {
-                        const error = JSON.parse(xhr.responseText);
-                        showError(error.detail || 'Erreur lors de l\'upload');
-                        resetForm();
-                    }
-                };
-
-                xhr.onerror = function() {
-                    showError('Erreur de connexion');
-                    resetForm();
-                };
-
-                statusText.textContent = 'Envoi en cours...';
-                xhr.open('POST', '/api/upload');
-                xhr.send(formData);
-
-            } catch (err) {
-                showError('Erreur: ' + err.message);
-                resetForm();
+            formData.append('file', selectedFile);
+            
+            const customTitle = titleInput.value.trim();
+            if (customTitle) {
+                formData.append('title', customTitle);
             }
+
+            const xhr = new XMLHttpRequest();
+            
+            xhr.upload.addEventListener('progress', (e) => {
+                if (e.lengthComputable) {
+                    const percent = Math.round((e.loaded / e.total) * 100);
+                    progressBar.style.width = percent + '%';
+                    progressText.textContent = percent + '%';
+                    
+                    if (percent === 100) {
+                        statusText.textContent = 'Conversion en cours...';
+                    }
+                }
+            });
+
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    const data = JSON.parse(xhr.responseText);
+                    statusText.textContent = 'Conversion terminée !';
+                    progressBar.style.width = '100%';
+                    setTimeout(() => {
+                        window.location.href = '/reader/' + data.id;
+                    }, 500);
+                } else {
+                    let errorMsg = 'Erreur lors de l\'upload';
+                    try {
+                        const error = JSON.parse(xhr.responseText);
+                        errorMsg = error.detail || errorMsg;
+                    } catch(e) {}
+                    showError(errorMsg);
+                    resetForm();
+                }
+            };
+
+            xhr.onerror = function() {
+                showError('Erreur de connexion');
+                resetForm();
+            };
+
+            statusText.textContent = 'Envoi en cours...';
+            xhr.open('POST', '/api/upload');
+            xhr.send(formData);
         }
 
         function showError(message) {
@@ -170,9 +259,11 @@
 
         function resetForm() {
             progress.classList.add('hidden');
-            dropzone.classList.remove('hidden');
+            step1.classList.remove('hidden');
+            step2.classList.add('hidden');
             progressBar.style.width = '0%';
             progressText.textContent = '0%';
+            selectedFile = null;
         }
     </script>
 </body>

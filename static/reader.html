@@ -6,9 +6,12 @@
     <title>Lecteur - OpenFlip</title>
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/turn.js/3/turn.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
     <style>
         :root {
-            --primary: #9333ea;
+            --primary: #a855f7;
+            --swiper-theme-color: #a855f7;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -79,48 +82,45 @@
             padding: 70px 20px 90px;
         }
 
-        /* Flipbook */
-        .flipbook-wrapper {
+        /* Viewer wrapper */
+        .viewer-wrapper {
             position: relative;
-            perspective: 2500px;
             transition: transform 0.3s ease;
             transform-origin: center center;
         }
 
-        #flipbook {
+        /* Turn.js Flipbook */
+        .flipbook-container {
+            position: relative;
+            perspective: 2500px;
+        }
+
+        #turnFlipbook {
             width: 900px;
             height: 600px;
         }
 
-        #flipbook .page {
+        #turnFlipbook .page {
             background-color: white;
         }
 
-        #flipbook .page img {
+        #turnFlipbook .page img {
             width: 100%;
             height: 100%;
             object-fit: contain;
             display: block;
         }
 
-        /* Page shadows and effects */
-        #flipbook .page.odd {
+        #turnFlipbook .page.odd {
             background: linear-gradient(to right, #fafafa 0%, #fff 10%, #fff 90%, #f5f5f5 100%);
-            box-shadow: 
-                inset -3px 0 20px rgba(0,0,0,0.05),
-                inset -1px 0 3px rgba(0,0,0,0.1);
-            border-right: 1px solid rgba(0,0,0,0.05);
+            box-shadow: inset -3px 0 20px rgba(0,0,0,0.05), inset -1px 0 3px rgba(0,0,0,0.1);
         }
 
-        #flipbook .page.even {
+        #turnFlipbook .page.even {
             background: linear-gradient(to left, #fafafa 0%, #fff 10%, #fff 90%, #f5f5f5 100%);
-            box-shadow: 
-                inset 3px 0 20px rgba(0,0,0,0.05),
-                inset 1px 0 3px rgba(0,0,0,0.1);
-            border-left: 1px solid rgba(0,0,0,0.05);
+            box-shadow: inset 3px 0 20px rgba(0,0,0,0.05), inset 1px 0 3px rgba(0,0,0,0.1);
         }
 
-        /* Book spine */
         .book-spine {
             position: absolute;
             left: 50%;
@@ -128,17 +128,11 @@
             bottom: 0;
             width: 6px;
             transform: translateX(-50%);
-            background: linear-gradient(to right, 
-                rgba(0,0,0,0.3) 0%, 
-                rgba(0,0,0,0.1) 20%,
-                rgba(255,255,255,0.2) 50%,
-                rgba(0,0,0,0.1) 80%,
-                rgba(0,0,0,0.3) 100%);
+            background: linear-gradient(to right, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.1) 20%, rgba(255,255,255,0.2) 50%, rgba(0,0,0,0.1) 80%, rgba(0,0,0,0.3) 100%);
             z-index: 10;
             pointer-events: none;
         }
 
-        /* Book shadow */
         .book-shadow {
             position: absolute;
             bottom: -25px;
@@ -150,37 +144,49 @@
             z-index: -1;
         }
 
-        /* Navigation arrows on book */
-        .nav-arrow {
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 50px;
-            height: 100px;
+        /* Swiper */
+        .swiper-container {
+            width: 100%;
+            max-width: 900px;
+            height: calc(100vh - 160px);
+        }
+
+        .swiper {
+            width: 100%;
+            height: 100%;
+            border-radius: 8px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .swiper-slide {
+            background: white;
             display: flex;
             align-items: center;
             justify-content: center;
-            cursor: pointer;
-            opacity: 0;
-            transition: opacity 0.3s;
-            z-index: 50;
+            border-radius: 4px;
+            overflow: hidden;
         }
 
-        .flipbook-wrapper:hover .nav-arrow {
-            opacity: 1;
+        .swiper-slide img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            background: white;
         }
 
-        .nav-arrow:hover {
-            background: rgba(0,0,0,0.1);
+        .swiper-button-next,
+        .swiper-button-prev {
+            color: white;
+            background: rgba(0,0,0,0.3);
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            backdrop-filter: blur(10px);
         }
 
-        .nav-arrow.prev { left: -60px; }
-        .nav-arrow.next { right: -60px; }
-
-        .nav-arrow svg {
-            width: 32px;
-            height: 32px;
-            color: rgba(255,255,255,0.8);
+        .swiper-button-next:after,
+        .swiper-button-prev:after {
+            font-size: 20px;
         }
 
         /* Controls bar */
@@ -224,6 +230,11 @@
             cursor: not-allowed;
         }
 
+        .controls button.active {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+
         .controls button svg {
             width: 18px;
             height: 18px;
@@ -261,6 +272,55 @@
             height: 24px;
             background: rgba(255,255,255,0.2);
             margin: 0 8px;
+        }
+
+        .zoom-level {
+            color: rgba(255,255,255,0.6);
+            font-size: 12px;
+            min-width: 45px;
+            text-align: center;
+        }
+
+        /* Effect selector */
+        .effect-selector {
+            position: relative;
+        }
+
+        .effect-menu {
+            position: absolute;
+            bottom: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.9);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 8px;
+            padding: 8px 0;
+            display: none;
+            min-width: 140px;
+        }
+
+        .effect-menu.show {
+            display: block;
+        }
+
+        .effect-menu button {
+            width: 100%;
+            background: transparent;
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            text-align: left;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .effect-menu button:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .effect-menu button.active {
+            background: var(--primary);
+            color: white;
         }
 
         /* Loading */
@@ -318,21 +378,106 @@
             text-decoration: none;
             border-radius: 8px;
             font-weight: 500;
-            transition: transform 0.2s;
         }
-        #error a:hover { transform: scale(1.05); }
+
+        /* Modal */
+        .modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+        }
+
+        .modal.show { display: flex; }
+
+        .modal-content {
+            background: #1e293b;
+            padding: 24px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 400px;
+        }
+
+        .modal-content h3 { margin-bottom: 16px; font-size: 18px; }
+
+        .modal-content input {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.2);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            font-size: 16px;
+            outline: none;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 16px;
+            justify-content: flex-end;
+        }
+
+        .modal-actions button {
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .modal-actions .cancel {
+            border: 1px solid rgba(255,255,255,0.2);
+            background: transparent;
+            color: white;
+        }
+
+        .modal-actions .save {
+            border: none;
+            background: var(--primary);
+            color: white;
+        }
 
         /* Responsive */
-        @media (max-width: 900px) {
-            #flipbook {
-                width: 90vw !important;
+        @media (max-width: 950px) {
+            #turnFlipbook {
+                width: 95vw !important;
                 height: 60vh !important;
             }
-            .nav-arrow { display: none; }
+            .swiper-container {
+                max-width: 95vw;
+            }
             .header .title { display: none; }
         }
 
         .hidden { display: none !important; }
+
+        /* Bouton retour flottant */
+        .back-btn {
+            position: fixed;
+            top: 70px;
+            left: 20px;
+            width: 40px;
+            height: 40px;
+            background: rgba(0,0,0,0.4);
+            border: none;
+            border-radius: 50%;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 90;
+            transition: all 0.2s;
+            backdrop-filter: blur(10px);
+        }
+
+        .back-btn:hover {
+            background: rgba(0,0,0,0.6);
+            transform: scale(1.1);
+        }
     </style>
 </head>
 <body>
@@ -345,8 +490,14 @@
             OpenFlip
         </a>
         <span class="title" id="docTitle"></span>
-        <a href="/upload" class="new-btn">+ Nouveau</a>
     </header>
+
+    <!-- Bouton retour flottant -->
+    <button onclick="history.back()" class="back-btn">
+        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+        </svg>
+    </button>
 
     <!-- Loading -->
     <div id="loading">
@@ -356,23 +507,22 @@
 
     <!-- Reader -->
     <div id="reader" class="reader-container hidden">
-        <div class="flipbook-wrapper">
-            <!-- Navigation arrows -->
-            <div class="nav-arrow prev" id="navPrev">
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-                </svg>
-            </div>
-            <div class="nav-arrow next" id="navNext">
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                </svg>
+        <div class="viewer-wrapper" id="viewerWrapper">
+            <!-- Turn.js container -->
+            <div id="turnContainer" class="flipbook-container">
+                <div id="turnFlipbook"></div>
+                <div class="book-spine" id="bookSpine"></div>
+                <div class="book-shadow"></div>
             </div>
 
-            <!-- Flipbook -->
-            <div id="flipbook"></div>
-            <div class="book-spine"></div>
-            <div class="book-shadow"></div>
+            <!-- Swiper container -->
+            <div id="swiperContainer" class="swiper-container hidden">
+                <div class="swiper" id="swiperFlipbook">
+                    <div class="swiper-wrapper" id="swiperWrapper"></div>
+                    <div class="swiper-button-prev"></div>
+                    <div class="swiper-button-next"></div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -408,12 +558,21 @@
 
         <div class="divider"></div>
 
-        <!-- Mode d'affichage -->
-        <button id="displayModeBtn" title="Mode single/double (D)">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-            </svg>
-        </button>
+        <!-- Effect selector -->
+        <div class="effect-selector">
+            <button id="effectBtn" title="Effet de transition">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"/>
+                </svg>
+            </button>
+            <div class="effect-menu" id="effectMenu">
+                <button data-effect="flip" class="active">Flipbook</button>
+                <button data-effect="slide">Slide</button>
+                <button data-effect="fade">Fade</button>
+                <button data-effect="coverflow">Coverflow</button>
+                <button data-effect="cards">Cards</button>
+            </div>
+        </div>
 
         <!-- Zoom -->
         <button id="zoomOutBtn" title="Zoom arrière (-)">
@@ -426,35 +585,15 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3H7"/>
             </svg>
         </button>
+        <span class="zoom-level" id="zoomLevel">100%</span>
+
+        <div class="divider"></div>
+
         <button id="fullscreenBtn" title="Plein écran (F)">
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/>
             </svg>
         </button>
-
-        <div class="divider"></div>
-
-        <!-- Titre personnalisé -->
-        <button id="editTitleBtn" title="Modifier le titre">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-            </svg>
-        </button>
-
-        <!-- Indicateur zoom -->
-        <span id="zoomLevel" style="color: rgba(255,255,255,0.6); font-size: 12px; min-width: 45px; text-align: center;">100%</span>
-    </div>
-
-    <!-- Modal titre -->
-    <div id="titleModal" class="hidden" style="position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 200;">
-        <div style="background: #1e293b; padding: 24px; border-radius: 12px; width: 90%; max-width: 400px;">
-            <h3 style="margin-bottom: 16px; font-size: 18px;">Modifier le titre</h3>
-            <input type="text" id="titleInput" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: white; font-size: 16px; outline: none;" placeholder="Titre du flipbook">
-            <div style="display: flex; gap: 12px; margin-top: 16px; justify-content: flex-end;">
-                <button id="cancelTitleBtn" style="padding: 10px 20px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: transparent; color: white; cursor: pointer;">Annuler</button>
-                <button id="saveTitleBtn" style="padding: 10px 20px; border-radius: 8px; border: none; background: var(--primary); color: white; cursor: pointer;">Enregistrer</button>
-            </div>
-        </div>
     </div>
 
     <!-- Error -->
@@ -471,18 +610,31 @@
     $(document).ready(function() {
         const docId = window.location.pathname.split('/').pop();
         let totalPages = 0;
-        let currentZoom = 1;
-        const zoomLevels = [0.6, 0.8, 1, 1.2, 1.5];
+        let currentEffect = 'flip'; // Défaut: flip (turn.js)
+        let currentPage = 1;
+        
+        // Viewers
+        let turnInstance = null;
+        let swiperInstance = null;
+        let turnInitialized = false;
+        let swiperInitialized = false;
+        
+        const zoomLevels = [0.5, 0.75, 1, 1.25, 1.5];
         let zoomIndex = 2;
 
         const $loading = $('#loading');
         const $reader = $('#reader');
         const $controls = $('#controls');
         const $error = $('#error');
-        const $flipbook = $('#flipbook');
+        const $turnContainer = $('#turnContainer');
+        const $swiperContainer = $('#swiperContainer');
+        const $turnFlipbook = $('#turnFlipbook');
+        const $swiperWrapper = $('#swiperWrapper');
+        const $viewerWrapper = $('#viewerWrapper');
         const $docTitle = $('#docTitle');
         const $pageInput = $('#pageInput');
         const $totalPages = $('#totalPages');
+        const $zoomLevel = $('#zoomLevel');
 
         // Load document
         async function loadDocument() {
@@ -498,16 +650,50 @@
                 
                 document.title = `${doc.title} - OpenFlip`;
                 
-                await initFlipbook();
-                loadSavedTitle();
+                // Load saved effect
+                const savedEffect = localStorage.getItem(`flipbook_effect_${docId}`);
+                if (savedEffect && ['flip', 'slide', 'fade', 'coverflow', 'cards'].includes(savedEffect)) {
+                    currentEffect = savedEffect;
+                }
+                
+                // Update menu UI
+                $('.effect-menu button').removeClass('active');
+                $(`.effect-menu button[data-effect="${currentEffect}"]`).addClass('active');
+                
+                await initViewer();
             } catch (err) {
                 $loading.addClass('hidden');
                 $error.addClass('show');
             }
         }
 
-        // Initialize flipbook
-        async function initFlipbook() {
+        // Initialize the appropriate viewer
+        async function initViewer() {
+            if (currentEffect === 'flip') {
+                await initTurnJs();
+                $turnContainer.removeClass('hidden');
+                $swiperContainer.addClass('hidden');
+                $('#bookSpine').show();
+            } else {
+                await initSwiper();
+                $turnContainer.addClass('hidden');
+                $swiperContainer.removeClass('hidden');
+            }
+            
+            $loading.addClass('hidden');
+            $reader.removeClass('hidden');
+            $controls.removeClass('hidden');
+            
+            updateButtons();
+        }
+
+        // Initialize Turn.js
+        async function initTurnJs() {
+            if (turnInitialized) {
+                $turnFlipbook.turn('page', currentPage);
+                return;
+            }
+            
             // Add pages
             for (let i = 1; i <= totalPages; i++) {
                 const $page = $('<div>', { class: 'page' });
@@ -517,12 +703,12 @@
                     loading: i <= 4 ? 'eager' : 'lazy'
                 });
                 $page.append($img);
-                $flipbook.append($page);
+                $turnFlipbook.append($page);
             }
 
-            // Wait for first images to load
+            // Wait for first images
             await Promise.all(
-                $flipbook.find('img').slice(0, 2).map(function() {
+                $turnFlipbook.find('img').slice(0, 2).map(function() {
                     return new Promise(resolve => {
                         if (this.complete) resolve();
                         else {
@@ -534,7 +720,7 @@
             );
 
             // Initialize turn.js
-            $flipbook.turn({
+            $turnFlipbook.turn({
                 width: 900,
                 height: 600,
                 autoCenter: true,
@@ -544,88 +730,188 @@
                 elevation: 50,
                 duration: 1000,
                 when: {
-                    turning: function(event, page, view) {
-                        updatePageIndicator(page);
+                    turning: function(event, page) {
+                        currentPage = page;
+                        updatePageIndicator();
                     },
-                    turned: function(event, page, view) {
-                        updatePageIndicator(page);
+                    turned: function(event, page) {
+                        currentPage = page;
+                        updatePageIndicator();
                         updateButtons();
-                        preloadPages(page);
                     }
                 }
             });
+            
+            turnInitialized = true;
+        }
 
-            $loading.addClass('hidden');
-            $reader.removeClass('hidden');
-            $controls.removeClass('hidden');
+        // Initialize Swiper
+        async function initSwiper() {
+            if (swiperInitialized) {
+                // Just update effect and go to page
+                if (swiperInstance) {
+                    swiperInstance.destroy(true, true);
+                }
+            } else {
+                // Add slides
+                for (let i = 1; i <= totalPages; i++) {
+                    const slide = document.createElement('div');
+                    slide.className = 'swiper-slide';
+                    slide.innerHTML = `<img src="/pages/${docId}/page_${i}.webp" alt="Page ${i}" loading="${i <= 3 ? 'eager' : 'lazy'}">`;
+                    $swiperWrapper[0].appendChild(slide);
+                }
+                swiperInitialized = true;
+            }
+
+            // Initialize Swiper with current effect
+            swiperInstance = new Swiper('#swiperFlipbook', {
+                effect: currentEffect,
+                grabCursor: true,
+                centeredSlides: true,
+                slidesPerView: currentEffect === 'coverflow' ? 'auto' : 1,
+                initialSlide: currentPage - 1,
+                speed: 600,
+                keyboard: { enabled: true },
+                navigation: {
+                    nextEl: '.swiper-button-next',
+                    prevEl: '.swiper-button-prev',
+                },
+                fadeEffect: { crossFade: true },
+                coverflowEffect: {
+                    rotate: 30,
+                    slideShadows: true,
+                    depth: 100,
+                    stretch: 0,
+                },
+                cardsEffect: {
+                    slideShadows: true,
+                    perSlideOffset: 8,
+                    perSlideRotate: 2,
+                },
+                on: {
+                    slideChange: function() {
+                        currentPage = this.activeIndex + 1;
+                        updatePageIndicator();
+                        updateButtons();
+                    }
+                }
+            });
+        }
+
+        // Change effect
+        function changeEffect(effectName) {
+            if (currentEffect === effectName) return;
+            
+            // Save current page
+            if (currentEffect === 'flip' && turnInitialized) {
+                currentPage = $turnFlipbook.turn('page');
+            } else if (swiperInstance) {
+                currentPage = swiperInstance.activeIndex + 1;
+            }
+            
+            currentEffect = effectName;
+            localStorage.setItem(`flipbook_effect_${docId}`, effectName);
+            
+            // Update menu UI
+            $('.effect-menu button').removeClass('active');
+            $(`.effect-menu button[data-effect="${effectName}"]`).addClass('active');
+            $('#effectMenu').removeClass('show');
+            
+            // Switch viewer
+            if (effectName === 'flip') {
+                $swiperContainer.addClass('hidden');
+                $turnContainer.removeClass('hidden');
+                $('#bookSpine').show();
+                if (turnInitialized) {
+                    $turnFlipbook.turn('page', currentPage);
+                }
+            } else {
+                $turnContainer.addClass('hidden');
+                $swiperContainer.removeClass('hidden');
+                initSwiper();
+            }
             
             updateButtons();
         }
 
-        // Preload nearby pages
-        function preloadPages(currentPage) {
-            for (let i = currentPage - 2; i <= currentPage + 4; i++) {
-                if (i > 0 && i <= totalPages) {
-                    const img = new Image();
-                    img.src = `/pages/${docId}/page_${i}.webp`;
-                }
-            }
-        }
-
         // Update page indicator
-        function updatePageIndicator(page) {
-            $pageInput.val(page);
+        function updatePageIndicator() {
+            $pageInput.val(currentPage);
         }
 
         // Update button states
         function updateButtons() {
-            const page = $flipbook.turn('page');
-            $('#firstBtn, #prevBtn').prop('disabled', page <= 1);
-            $('#lastBtn, #nextBtn').prop('disabled', page >= totalPages);
+            $('#firstBtn, #prevBtn').prop('disabled', currentPage <= 1);
+            $('#lastBtn, #nextBtn').prop('disabled', currentPage >= totalPages);
         }
 
         // Navigation
-        $('#firstBtn, #navPrev').on('click', function() {
-            if ($('#firstBtn').is(':disabled')) return;
-            $flipbook.turn('page', 1);
-        });
+        function goToPage(page) {
+            if (page < 1 || page > totalPages) return;
+            currentPage = page;
+            
+            if (currentEffect === 'flip' && turnInitialized) {
+                $turnFlipbook.turn('page', page);
+            } else if (swiperInstance) {
+                swiperInstance.slideTo(page - 1);
+            }
+            
+            updatePageIndicator();
+            updateButtons();
+        }
 
-        $('#prevBtn').on('click', function() {
-            $flipbook.turn('previous');
-        });
+        function prevPage() {
+            if (currentEffect === 'flip' && turnInitialized) {
+                $turnFlipbook.turn('previous');
+            } else if (swiperInstance) {
+                swiperInstance.slidePrev();
+            }
+        }
 
-        $('#nextBtn').on('click', function() {
-            $flipbook.turn('next');
-        });
+        function nextPage() {
+            if (currentEffect === 'flip' && turnInitialized) {
+                $turnFlipbook.turn('next');
+            } else if (swiperInstance) {
+                swiperInstance.slideNext();
+            }
+        }
 
-        $('#lastBtn, #navNext').on('click', function() {
-            if ($('#lastBtn').is(':disabled')) return;
-            $flipbook.turn('page', totalPages);
-        });
+        // Event listeners
+        $('#firstBtn').on('click', () => goToPage(1));
+        $('#prevBtn').on('click', prevPage);
+        $('#nextBtn').on('click', nextPage);
+        $('#lastBtn').on('click', () => goToPage(totalPages));
 
-        $('#navPrev').on('click', function() {
-            $flipbook.turn('previous');
-        });
-
-        $('#navNext').on('click', function() {
-            $flipbook.turn('next');
-        });
-
-        // Page input
         $pageInput.on('change', function() {
             const page = parseInt($(this).val());
             if (page >= 1 && page <= totalPages) {
-                $flipbook.turn('page', page);
+                goToPage(page);
             } else {
-                $(this).val($flipbook.turn('page'));
+                $(this).val(currentPage);
             }
         });
 
-        // Zoom (CSS transform car turn.js v3 ne supporte pas zoom)
+        // Effect menu
+        $('#effectBtn').on('click', function(e) {
+            e.stopPropagation();
+            $('#effectMenu').toggleClass('show');
+        });
+
+        $('.effect-menu button').on('click', function() {
+            changeEffect($(this).data('effect'));
+        });
+
+        $(document).on('click', function(e) {
+            if (!$(e.target).closest('.effect-selector').length) {
+                $('#effectMenu').removeClass('show');
+            }
+        });
+
+        // Zoom
         function applyZoom() {
-            currentZoom = zoomLevels[zoomIndex];
-            $('.flipbook-wrapper').css('transform', `scale(${currentZoom})`);
-            $('#zoomLevel').text(Math.round(currentZoom * 100) + '%');
+            const zoom = zoomLevels[zoomIndex];
+            $viewerWrapper.css('transform', `scale(${zoom})`);
+            $zoomLevel.text(Math.round(zoom * 100) + '%');
         }
 
         $('#zoomInBtn').on('click', function() {
@@ -642,49 +928,6 @@
             }
         });
 
-        // Display mode (single/double)
-        let displayMode = 'double';
-        $('#displayModeBtn').on('click', function() {
-            displayMode = displayMode === 'double' ? 'single' : 'double';
-            $flipbook.turn('display', displayMode);
-            // Update spine visibility
-            if (displayMode === 'single') {
-                $('.book-spine').hide();
-            } else {
-                $('.book-spine').show();
-            }
-        });
-
-        // Title editing
-        $('#editTitleBtn').on('click', function() {
-            $('#titleInput').val($docTitle.text());
-            $('#titleModal').removeClass('hidden');
-        });
-
-        $('#cancelTitleBtn').on('click', function() {
-            $('#titleModal').addClass('hidden');
-        });
-
-        $('#saveTitleBtn').on('click', function() {
-            const newTitle = $('#titleInput').val().trim();
-            if (newTitle) {
-                $docTitle.text(newTitle);
-                document.title = `${newTitle} - OpenFlip`;
-                // Save to localStorage
-                localStorage.setItem(`flipbook_title_${docId}`, newTitle);
-            }
-            $('#titleModal').addClass('hidden');
-        });
-
-        // Load saved title from localStorage
-        function loadSavedTitle() {
-            const savedTitle = localStorage.getItem(`flipbook_title_${docId}`);
-            if (savedTitle) {
-                $docTitle.text(savedTitle);
-                document.title = `${savedTitle} - OpenFlip`;
-            }
-        }
-
         // Fullscreen
         $('#fullscreenBtn').on('click', function() {
             if (document.fullscreenElement) {
@@ -694,26 +937,26 @@
             }
         });
 
-        // Keyboard navigation
+        // Keyboard shortcuts
         $(document).on('keydown', function(e) {
             if (e.target.tagName === 'INPUT') return;
             
             switch(e.key) {
                 case 'ArrowLeft':
                 case 'ArrowUp':
-                    $flipbook.turn('previous');
+                    prevPage();
                     break;
                 case 'ArrowRight':
                 case 'ArrowDown':
                 case ' ':
                     e.preventDefault();
-                    $flipbook.turn('next');
+                    nextPage();
                     break;
                 case 'Home':
-                    $flipbook.turn('page', 1);
+                    goToPage(1);
                     break;
                 case 'End':
-                    $flipbook.turn('page', totalPages);
+                    goToPage(totalPages);
                     break;
                 case '+':
                 case '=':
@@ -726,42 +969,7 @@
                 case 'F':
                     $('#fullscreenBtn').click();
                     break;
-                case 'd':
-                case 'D':
-                    $('#displayModeBtn').click();
-                    break;
             }
-        });
-
-        // Touch/swipe support (turn.js handles this, but we add extra)
-        let touchStartX = 0;
-        let touchStartY = 0;
-
-        $flipbook.on('touchstart', function(e) {
-            touchStartX = e.originalEvent.touches[0].clientX;
-            touchStartY = e.originalEvent.touches[0].clientY;
-        });
-
-        $flipbook.on('touchend', function(e) {
-            const touchEndX = e.originalEvent.changedTouches[0].clientX;
-            const touchEndY = e.originalEvent.changedTouches[0].clientY;
-            const diffX = touchStartX - touchEndX;
-            const diffY = touchStartY - touchEndY;
-
-            if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 50) {
-                if (diffX > 0) {
-                    $flipbook.turn('next');
-                } else {
-                    $flipbook.turn('previous');
-                }
-            }
-        });
-
-        // Handle window resize
-        $(window).on('resize', function() {
-            const width = Math.min(800, $(window).width() - 40);
-            const height = width * 0.625;
-            $flipbook.turn('size', width, height);
         });
 
         // Start
