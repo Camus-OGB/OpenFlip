@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenFlip - PDF vers Flipbook</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#faf5ff',
+                            100: '#f3e8ff',
+                            500: '#a855f7',
+                            600: '#9333ea',
+                            700: '#7c3aed',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-white text-gray-900">
+    <!-- Header -->
+    <header class="border-b">
+        <div class="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
+            <a href="/" class="font-semibold flex items-center gap-2">
+                <svg class="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                </svg>
+                OpenFlip
+            </a>
+            <nav class="flex items-center gap-6">
+                <a href="/upload" class="text-sm text-gray-600 hover:text-gray-900">Créer</a>
+                <a href="https://github.com/openflip/openflip" target="_blank" class="text-sm text-gray-600 hover:text-gray-900">GitHub</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Hero -->
+    <main class="max-w-5xl mx-auto px-4">
+        <section class="py-20 md:py-32 text-center">
+            <h1 class="text-4xl md:text-5xl font-bold leading-tight">
+                PDF vers Flipbook
+            </h1>
+            <p class="mt-4 text-lg text-gray-600 max-w-md mx-auto">
+                Transformez vos documents PDF en flipbooks interactifs. Open source et gratuit.
+            </p>
+            <div class="mt-8">
+                <a href="/upload" class="inline-flex items-center gap-2 px-6 py-3 bg-primary-600 text-white font-medium rounded-lg hover:bg-primary-700 transition-colors">
+                    Commencer
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
+                    </svg>
+                </a>
+            </div>
+        </section>
+
+        <!-- Features -->
+        <section class="py-16 border-t">
+            <div class="grid md:grid-cols-3 gap-8 max-w-3xl mx-auto">
+                <div class="text-center">
+                    <div class="w-12 h-12 mx-auto rounded-full bg-primary-100 flex items-center justify-center">
+                        <svg class="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+                        </svg>
+                    </div>
+                    <h3 class="mt-4 font-semibold">Simple</h3>
+                    <p class="mt-2 text-sm text-gray-600">Glissez-déposez votre PDF, c'est tout.</p>
+                </div>
+                <div class="text-center">
+                    <div class="w-12 h-12 mx-auto rounded-full bg-primary-100 flex items-center justify-center">
+                        <svg class="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                        </svg>
+                    </div>
+                    <h3 class="mt-4 font-semibold">Privé</h3>
+                    <p class="mt-2 text-sm text-gray-600">Vos fichiers restent sur votre serveur.</p>
+                </div>
+                <div class="text-center">
+                    <div class="w-12 h-12 mx-auto rounded-full bg-primary-100 flex items-center justify-center">
+                        <svg class="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                        </svg>
+                    </div>
+                    <h3 class="mt-4 font-semibold">Responsive</h3>
+                    <p class="mt-2 text-sm text-gray-600">Fonctionne sur tous les appareils.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Derniers flipbooks -->
+        <section id="recent" class="py-16 border-t">
+            <h2 class="text-2xl font-bold text-center mb-8">Derniers flipbooks</h2>
+            <div id="recentList" class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                <!-- Chargé dynamiquement -->
+            </div>
+            <p id="noRecent" class="text-center text-gray-500 hidden">Aucun flipbook pour le moment.</p>
+        </section>
+
+        <!-- CTA -->
+        <section class="py-16 text-center bg-gray-50 -mx-4 px-4 rounded-lg mb-16">
+            <h2 class="text-2xl font-bold">Prêt à essayer ?</h2>
+            <p class="mt-2 text-gray-600">Aucune inscription requise.</p>
+            <div class="mt-6">
+                <a href="/upload" class="inline-flex px-5 py-2.5 bg-primary-600 text-white font-medium rounded-lg hover:bg-primary-700 transition-colors">
+                    Créer un flipbook
+                </a>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        async function loadRecentFlipbooks() {
+            try {
+                const res = await fetch('/api/documents');
+                const docs = await res.json();
+                
+                const list = document.getElementById('recentList');
+                const noRecent = document.getElementById('noRecent');
+                
+                if (docs.length === 0) {
+                    list.classList.add('hidden');
+                    noRecent.classList.remove('hidden');
+                    return;
+                }
+                
+                list.innerHTML = docs.map(doc => `
+                    <a href="/reader/${doc.id}" class="group block bg-white border rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
+                        <div class="aspect-[4/3] bg-gray-100 overflow-hidden">
+                            <img src="${doc.thumbnail}" alt="${doc.title}" class="w-full h-full object-cover group-hover:scale-105 transition-transform">
+                        </div>
+                        <div class="p-3">
+                            <h3 class="font-medium text-sm truncate">${doc.title}</h3>
+                            <p class="text-xs text-gray-500">${doc.pages} pages</p>
+                        </div>
+                    </a>
+                `).join('');
+            } catch (err) {
+                console.error('Erreur chargement flipbooks:', err);
+            }
+        }
+        
+        loadRecentFlipbooks();
+    </script>
+</body>
+</html>

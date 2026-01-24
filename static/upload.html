@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Créer un flipbook - OpenFlip</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#faf5ff',
+                            100: '#f3e8ff',
+                            500: '#a855f7',
+                            600: '#9333ea',
+                            700: '#7c3aed',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-white text-gray-900">
+    <!-- Header -->
+    <header class="border-b">
+        <div class="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
+            <a href="/" class="font-semibold flex items-center gap-2">
+                <svg class="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                </svg>
+                OpenFlip
+            </a>
+            <nav class="flex items-center gap-6">
+                <a href="/upload" class="text-sm text-gray-600 hover:text-gray-900">Créer</a>
+                <a href="https://github.com/openflip/openflip" target="_blank" class="text-sm text-gray-600 hover:text-gray-900">GitHub</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="max-w-xl mx-auto px-4 py-12">
+        <div class="text-center mb-8">
+            <h1 class="text-2xl font-bold">Créer un flipbook</h1>
+            <p class="mt-2 text-gray-600">Uploadez un PDF (max 50 Mo)</p>
+        </div>
+
+        <!-- Drop Zone -->
+        <div id="dropzone" class="border-2 border-dashed border-gray-300 rounded-xl p-12 text-center cursor-pointer hover:border-primary-500 hover:bg-primary-50 transition-colors">
+            <input type="file" id="fileInput" accept=".pdf" class="hidden">
+            <svg class="w-12 h-12 mx-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+            </svg>
+            <p class="mt-4 text-gray-600">Glissez un PDF ici ou <span class="text-primary-600 font-medium">parcourir</span></p>
+            <p class="mt-1 text-sm text-gray-400">PDF uniquement, max 50 Mo</p>
+        </div>
+
+        <!-- Progress -->
+        <div id="progress" class="hidden mt-6">
+            <div class="flex items-center gap-3">
+                <div class="flex-1">
+                    <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
+                        <div id="progressBar" class="h-full bg-primary-600 transition-all duration-300" style="width: 0%"></div>
+                    </div>
+                </div>
+                <span id="progressText" class="text-sm text-gray-600">0%</span>
+            </div>
+            <p id="statusText" class="mt-2 text-sm text-gray-600 text-center">Envoi en cours...</p>
+        </div>
+
+        <!-- Error -->
+        <div id="error" class="hidden mt-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm"></div>
+    </main>
+
+    <script>
+        const dropzone = document.getElementById('dropzone');
+        const fileInput = document.getElementById('fileInput');
+        const progress = document.getElementById('progress');
+        const progressBar = document.getElementById('progressBar');
+        const progressText = document.getElementById('progressText');
+        const statusText = document.getElementById('statusText');
+        const errorDiv = document.getElementById('error');
+
+        dropzone.addEventListener('click', () => fileInput.click());
+
+        dropzone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropzone.classList.add('border-primary-500', 'bg-primary-50');
+        });
+
+        dropzone.addEventListener('dragleave', () => {
+            dropzone.classList.remove('border-primary-500', 'bg-primary-50');
+        });
+
+        dropzone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropzone.classList.remove('border-primary-500', 'bg-primary-50');
+            const file = e.dataTransfer.files[0];
+            if (file) handleFile(file);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) handleFile(file);
+        });
+
+        async function handleFile(file) {
+            if (!file.name.toLowerCase().endsWith('.pdf')) {
+                showError('Seuls les fichiers PDF sont acceptés');
+                return;
+            }
+
+            if (file.size > 50 * 1024 * 1024) {
+                showError('Le fichier est trop volumineux (max 50 Mo)');
+                return;
+            }
+
+            errorDiv.classList.add('hidden');
+            dropzone.classList.add('hidden');
+            progress.classList.remove('hidden');
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const xhr = new XMLHttpRequest();
+                
+                xhr.upload.addEventListener('progress', (e) => {
+                    if (e.lengthComputable) {
+                        const percent = Math.round((e.loaded / e.total) * 100);
+                        progressBar.style.width = percent + '%';
+                        progressText.textContent = percent + '%';
+                    }
+                });
+
+                xhr.onload = function() {
+                    if (xhr.status === 200) {
+                        const data = JSON.parse(xhr.responseText);
+                        statusText.textContent = 'Conversion terminée !';
+                        setTimeout(() => {
+                            window.location.href = '/reader/' + data.id;
+                        }, 500);
+                    } else {
+                        const error = JSON.parse(xhr.responseText);
+                        showError(error.detail || 'Erreur lors de l\'upload');
+                        resetForm();
+                    }
+                };
+
+                xhr.onerror = function() {
+                    showError('Erreur de connexion');
+                    resetForm();
+                };
+
+                statusText.textContent = 'Envoi en cours...';
+                xhr.open('POST', '/api/upload');
+                xhr.send(formData);
+
+            } catch (err) {
+                showError('Erreur: ' + err.message);
+                resetForm();
+            }
+        }
+
+        function showError(message) {
+            errorDiv.textContent = message;
+            errorDiv.classList.remove('hidden');
+        }
+
+        function resetForm() {
+            progress.classList.add('hidden');
+            dropzone.classList.remove('hidden');
+            progressBar.style.width = '0%';
+            progressText.textContent = '0%';
+        }
+    </script>
+</body>
+</html>

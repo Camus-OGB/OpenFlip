@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Lecteur - OpenFlip</title>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/turn.js/3/turn.min.js"></script>
+    <style>
+        :root {
+            --primary: #9333ea;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            overflow: hidden;
+            color: white;
+        }
+
+        /* Header */
+        .header {
+            background: rgba(0,0,0,0.3);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding: 0 20px;
+            height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+        }
+
+        .header a { 
+            color: white; 
+            text-decoration: none; 
+            font-weight: 600; 
+            display: flex; 
+            align-items: center; 
+            gap: 8px; 
+        }
+        .header svg { width: 22px; height: 22px; color: var(--primary); }
+        .header .title { 
+            color: rgba(255,255,255,0.7); 
+            font-size: 14px; 
+            max-width: 300px; 
+            overflow: hidden; 
+            text-overflow: ellipsis; 
+            white-space: nowrap;
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        .header .new-btn { 
+            color: rgba(255,255,255,0.7); 
+            font-size: 14px;
+            padding: 8px 16px;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+        .header .new-btn:hover { 
+            color: white; 
+            background: rgba(255,255,255,0.1);
+        }
+
+        /* Main container */
+        .reader-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            padding: 70px 20px 90px;
+        }
+
+        /* Flipbook */
+        .flipbook-wrapper {
+            position: relative;
+            perspective: 2500px;
+            transition: transform 0.3s ease;
+            transform-origin: center center;
+        }
+
+        #flipbook {
+            width: 900px;
+            height: 600px;
+        }
+
+        #flipbook .page {
+            background-color: white;
+        }
+
+        #flipbook .page img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
+        }
+
+        /* Page shadows and effects */
+        #flipbook .page.odd {
+            background: linear-gradient(to right, #fafafa 0%, #fff 10%, #fff 90%, #f5f5f5 100%);
+            box-shadow: 
+                inset -3px 0 20px rgba(0,0,0,0.05),
+                inset -1px 0 3px rgba(0,0,0,0.1);
+            border-right: 1px solid rgba(0,0,0,0.05);
+        }
+
+        #flipbook .page.even {
+            background: linear-gradient(to left, #fafafa 0%, #fff 10%, #fff 90%, #f5f5f5 100%);
+            box-shadow: 
+                inset 3px 0 20px rgba(0,0,0,0.05),
+                inset 1px 0 3px rgba(0,0,0,0.1);
+            border-left: 1px solid rgba(0,0,0,0.05);
+        }
+
+        /* Book spine */
+        .book-spine {
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 6px;
+            transform: translateX(-50%);
+            background: linear-gradient(to right, 
+                rgba(0,0,0,0.3) 0%, 
+                rgba(0,0,0,0.1) 20%,
+                rgba(255,255,255,0.2) 50%,
+                rgba(0,0,0,0.1) 80%,
+                rgba(0,0,0,0.3) 100%);
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        /* Book shadow */
+        .book-shadow {
+            position: absolute;
+            bottom: -25px;
+            left: 5%;
+            right: 5%;
+            height: 25px;
+            background: radial-gradient(ellipse at center, rgba(0,0,0,0.5) 0%, transparent 70%);
+            filter: blur(8px);
+            z-index: -1;
+        }
+
+        /* Navigation arrows on book */
+        .nav-arrow {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 50px;
+            height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 50;
+        }
+
+        .flipbook-wrapper:hover .nav-arrow {
+            opacity: 1;
+        }
+
+        .nav-arrow:hover {
+            background: rgba(0,0,0,0.1);
+        }
+
+        .nav-arrow.prev { left: -60px; }
+        .nav-arrow.next { right: -60px; }
+
+        .nav-arrow svg {
+            width: 32px;
+            height: 32px;
+            color: rgba(255,255,255,0.8);
+        }
+
+        /* Controls bar */
+        .controls {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(10px);
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            z-index: 100;
+        }
+
+        .controls button {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .controls button:hover:not(:disabled) {
+            background: var(--primary);
+            border-color: var(--primary);
+            transform: scale(1.05);
+        }
+
+        .controls button:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .controls button svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        .page-indicator {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 8px;
+            padding: 8px 16px;
+            color: white;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .page-indicator input {
+            background: transparent;
+            border: none;
+            color: white;
+            width: 35px;
+            text-align: center;
+            font-size: 14px;
+            outline: none;
+        }
+
+        .page-indicator input::-webkit-outer-spin-button,
+        .page-indicator input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+        }
+
+        .divider {
+            width: 1px;
+            height: 24px;
+            background: rgba(255,255,255,0.2);
+            margin: 0 8px;
+        }
+
+        /* Loading */
+        #loading {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            z-index: 1000;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(255,255,255,0.1);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        #loading p {
+            margin-top: 16px;
+            color: rgba(255,255,255,0.6);
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Error */
+        #error {
+            position: fixed;
+            inset: 0;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            text-align: center;
+            padding: 20px;
+        }
+
+        #error.show { display: flex; }
+        #error svg { color: #ef4444; }
+        #error h2 { font-size: 24px; margin-top: 16px; }
+        #error p { color: rgba(255,255,255,0.6); margin-top: 8px; }
+        #error a {
+            margin-top: 24px;
+            padding: 12px 24px;
+            background: var(--primary);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: transform 0.2s;
+        }
+        #error a:hover { transform: scale(1.05); }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            #flipbook {
+                width: 90vw !important;
+                height: 60vh !important;
+            }
+            .nav-arrow { display: none; }
+            .header .title { display: none; }
+        }
+
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <a href="/">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+            </svg>
+            OpenFlip
+        </a>
+        <span class="title" id="docTitle"></span>
+        <a href="/upload" class="new-btn">+ Nouveau</a>
+    </header>
+
+    <!-- Loading -->
+    <div id="loading">
+        <div class="spinner"></div>
+        <p>Chargement du flipbook...</p>
+    </div>
+
+    <!-- Reader -->
+    <div id="reader" class="reader-container hidden">
+        <div class="flipbook-wrapper">
+            <!-- Navigation arrows -->
+            <div class="nav-arrow prev" id="navPrev">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                </svg>
+            </div>
+            <div class="nav-arrow next" id="navNext">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                </svg>
+            </div>
+
+            <!-- Flipbook -->
+            <div id="flipbook"></div>
+            <div class="book-spine"></div>
+            <div class="book-shadow"></div>
+        </div>
+    </div>
+
+    <!-- Controls -->
+    <div id="controls" class="controls hidden">
+        <button id="firstBtn" title="Première page (Home)">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"/>
+            </svg>
+        </button>
+        <button id="prevBtn" title="Page précédente (←)">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+            </svg>
+        </button>
+        
+        <div class="page-indicator">
+            <input type="number" id="pageInput" min="1" value="1">
+            <span>/</span>
+            <span id="totalPages">0</span>
+        </div>
+
+        <button id="nextBtn" title="Page suivante (→)">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
+        </button>
+        <button id="lastBtn" title="Dernière page (End)">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"/>
+            </svg>
+        </button>
+
+        <div class="divider"></div>
+
+        <!-- Mode d'affichage -->
+        <button id="displayModeBtn" title="Mode single/double (D)">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+        </button>
+
+        <!-- Zoom -->
+        <button id="zoomOutBtn" title="Zoom arrière (-)">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM13 10H7"/>
+            </svg>
+        </button>
+        <button id="zoomInBtn" title="Zoom avant (+)">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3H7"/>
+            </svg>
+        </button>
+        <button id="fullscreenBtn" title="Plein écran (F)">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/>
+            </svg>
+        </button>
+
+        <div class="divider"></div>
+
+        <!-- Titre personnalisé -->
+        <button id="editTitleBtn" title="Modifier le titre">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+            </svg>
+        </button>
+
+        <!-- Indicateur zoom -->
+        <span id="zoomLevel" style="color: rgba(255,255,255,0.6); font-size: 12px; min-width: 45px; text-align: center;">100%</span>
+    </div>
+
+    <!-- Modal titre -->
+    <div id="titleModal" class="hidden" style="position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 200;">
+        <div style="background: #1e293b; padding: 24px; border-radius: 12px; width: 90%; max-width: 400px;">
+            <h3 style="margin-bottom: 16px; font-size: 18px;">Modifier le titre</h3>
+            <input type="text" id="titleInput" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: white; font-size: 16px; outline: none;" placeholder="Titre du flipbook">
+            <div style="display: flex; gap: 12px; margin-top: 16px; justify-content: flex-end;">
+                <button id="cancelTitleBtn" style="padding: 10px 20px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: transparent; color: white; cursor: pointer;">Annuler</button>
+                <button id="saveTitleBtn" style="padding: 10px 20px; border-radius: 8px; border: none; background: var(--primary); color: white; cursor: pointer;">Enregistrer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Error -->
+    <div id="error">
+        <svg width="64" height="64" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+        </svg>
+        <h2>Document introuvable</h2>
+        <p>Ce document n'existe pas ou a été supprimé.</p>
+        <a href="/upload">Créer un flipbook</a>
+    </div>
+
+    <script>
+    $(document).ready(function() {
+        const docId = window.location.pathname.split('/').pop();
+        let totalPages = 0;
+        let currentZoom = 1;
+        const zoomLevels = [0.6, 0.8, 1, 1.2, 1.5];
+        let zoomIndex = 2;
+
+        const $loading = $('#loading');
+        const $reader = $('#reader');
+        const $controls = $('#controls');
+        const $error = $('#error');
+        const $flipbook = $('#flipbook');
+        const $docTitle = $('#docTitle');
+        const $pageInput = $('#pageInput');
+        const $totalPages = $('#totalPages');
+
+        // Load document
+        async function loadDocument() {
+            try {
+                const res = await fetch(`/api/documents/${docId}`);
+                if (!res.ok) throw new Error('Not found');
+                
+                const doc = await res.json();
+                totalPages = doc.pages;
+                $docTitle.text(doc.title);
+                $totalPages.text(totalPages);
+                $pageInput.attr('max', totalPages);
+                
+                document.title = `${doc.title} - OpenFlip`;
+                
+                await initFlipbook();
+                loadSavedTitle();
+            } catch (err) {
+                $loading.addClass('hidden');
+                $error.addClass('show');
+            }
+        }
+
+        // Initialize flipbook
+        async function initFlipbook() {
+            // Add pages
+            for (let i = 1; i <= totalPages; i++) {
+                const $page = $('<div>', { class: 'page' });
+                const $img = $('<img>', {
+                    src: `/pages/${docId}/page_${i}.webp`,
+                    alt: `Page ${i}`,
+                    loading: i <= 4 ? 'eager' : 'lazy'
+                });
+                $page.append($img);
+                $flipbook.append($page);
+            }
+
+            // Wait for first images to load
+            await Promise.all(
+                $flipbook.find('img').slice(0, 2).map(function() {
+                    return new Promise(resolve => {
+                        if (this.complete) resolve();
+                        else {
+                            this.onload = resolve;
+                            this.onerror = resolve;
+                        }
+                    });
+                }).get()
+            );
+
+            // Initialize turn.js
+            $flipbook.turn({
+                width: 900,
+                height: 600,
+                autoCenter: true,
+                display: 'double',
+                acceleration: true,
+                gradients: true,
+                elevation: 50,
+                duration: 1000,
+                when: {
+                    turning: function(event, page, view) {
+                        updatePageIndicator(page);
+                    },
+                    turned: function(event, page, view) {
+                        updatePageIndicator(page);
+                        updateButtons();
+                        preloadPages(page);
+                    }
+                }
+            });
+
+            $loading.addClass('hidden');
+            $reader.removeClass('hidden');
+            $controls.removeClass('hidden');
+            
+            updateButtons();
+        }
+
+        // Preload nearby pages
+        function preloadPages(currentPage) {
+            for (let i = currentPage - 2; i <= currentPage + 4; i++) {
+                if (i > 0 && i <= totalPages) {
+                    const img = new Image();
+                    img.src = `/pages/${docId}/page_${i}.webp`;
+                }
+            }
+        }
+
+        // Update page indicator
+        function updatePageIndicator(page) {
+            $pageInput.val(page);
+        }
+
+        // Update button states
+        function updateButtons() {
+            const page = $flipbook.turn('page');
+            $('#firstBtn, #prevBtn').prop('disabled', page <= 1);
+            $('#lastBtn, #nextBtn').prop('disabled', page >= totalPages);
+        }
+
+        // Navigation
+        $('#firstBtn, #navPrev').on('click', function() {
+            if ($('#firstBtn').is(':disabled')) return;
+            $flipbook.turn('page', 1);
+        });
+
+        $('#prevBtn').on('click', function() {
+            $flipbook.turn('previous');
+        });
+
+        $('#nextBtn').on('click', function() {
+            $flipbook.turn('next');
+        });
+
+        $('#lastBtn, #navNext').on('click', function() {
+            if ($('#lastBtn').is(':disabled')) return;
+            $flipbook.turn('page', totalPages);
+        });
+
+        $('#navPrev').on('click', function() {
+            $flipbook.turn('previous');
+        });
+
+        $('#navNext').on('click', function() {
+            $flipbook.turn('next');
+        });
+
+        // Page input
+        $pageInput.on('change', function() {
+            const page = parseInt($(this).val());
+            if (page >= 1 && page <= totalPages) {
+                $flipbook.turn('page', page);
+            } else {
+                $(this).val($flipbook.turn('page'));
+            }
+        });
+
+        // Zoom (CSS transform car turn.js v3 ne supporte pas zoom)
+        function applyZoom() {
+            currentZoom = zoomLevels[zoomIndex];
+            $('.flipbook-wrapper').css('transform', `scale(${currentZoom})`);
+            $('#zoomLevel').text(Math.round(currentZoom * 100) + '%');
+        }
+
+        $('#zoomInBtn').on('click', function() {
+            if (zoomIndex < zoomLevels.length - 1) {
+                zoomIndex++;
+                applyZoom();
+            }
+        });
+
+        $('#zoomOutBtn').on('click', function() {
+            if (zoomIndex > 0) {
+                zoomIndex--;
+                applyZoom();
+            }
+        });
+
+        // Display mode (single/double)
+        let displayMode = 'double';
+        $('#displayModeBtn').on('click', function() {
+            displayMode = displayMode === 'double' ? 'single' : 'double';
+            $flipbook.turn('display', displayMode);
+            // Update spine visibility
+            if (displayMode === 'single') {
+                $('.book-spine').hide();
+            } else {
+                $('.book-spine').show();
+            }
+        });
+
+        // Title editing
+        $('#editTitleBtn').on('click', function() {
+            $('#titleInput').val($docTitle.text());
+            $('#titleModal').removeClass('hidden');
+        });
+
+        $('#cancelTitleBtn').on('click', function() {
+            $('#titleModal').addClass('hidden');
+        });
+
+        $('#saveTitleBtn').on('click', function() {
+            const newTitle = $('#titleInput').val().trim();
+            if (newTitle) {
+                $docTitle.text(newTitle);
+                document.title = `${newTitle} - OpenFlip`;
+                // Save to localStorage
+                localStorage.setItem(`flipbook_title_${docId}`, newTitle);
+            }
+            $('#titleModal').addClass('hidden');
+        });
+
+        // Load saved title from localStorage
+        function loadSavedTitle() {
+            const savedTitle = localStorage.getItem(`flipbook_title_${docId}`);
+            if (savedTitle) {
+                $docTitle.text(savedTitle);
+                document.title = `${savedTitle} - OpenFlip`;
+            }
+        }
+
+        // Fullscreen
+        $('#fullscreenBtn').on('click', function() {
+            if (document.fullscreenElement) {
+                document.exitFullscreen();
+            } else {
+                document.documentElement.requestFullscreen();
+            }
+        });
+
+        // Keyboard navigation
+        $(document).on('keydown', function(e) {
+            if (e.target.tagName === 'INPUT') return;
+            
+            switch(e.key) {
+                case 'ArrowLeft':
+                case 'ArrowUp':
+                    $flipbook.turn('previous');
+                    break;
+                case 'ArrowRight':
+                case 'ArrowDown':
+                case ' ':
+                    e.preventDefault();
+                    $flipbook.turn('next');
+                    break;
+                case 'Home':
+                    $flipbook.turn('page', 1);
+                    break;
+                case 'End':
+                    $flipbook.turn('page', totalPages);
+                    break;
+                case '+':
+                case '=':
+                    $('#zoomInBtn').click();
+                    break;
+                case '-':
+                    $('#zoomOutBtn').click();
+                    break;
+                case 'f':
+                case 'F':
+                    $('#fullscreenBtn').click();
+                    break;
+                case 'd':
+                case 'D':
+                    $('#displayModeBtn').click();
+                    break;
+            }
+        });
+
+        // Touch/swipe support (turn.js handles this, but we add extra)
+        let touchStartX = 0;
+        let touchStartY = 0;
+
+        $flipbook.on('touchstart', function(e) {
+            touchStartX = e.originalEvent.touches[0].clientX;
+            touchStartY = e.originalEvent.touches[0].clientY;
+        });
+
+        $flipbook.on('touchend', function(e) {
+            const touchEndX = e.originalEvent.changedTouches[0].clientX;
+            const touchEndY = e.originalEvent.changedTouches[0].clientY;
+            const diffX = touchStartX - touchEndX;
+            const diffY = touchStartY - touchEndY;
+
+            if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 50) {
+                if (diffX > 0) {
+                    $flipbook.turn('next');
+                } else {
+                    $flipbook.turn('previous');
+                }
+            }
+        });
+
+        // Handle window resize
+        $(window).on('resize', function() {
+            const width = Math.min(800, $(window).width() - 40);
+            const height = width * 0.625;
+            $flipbook.turn('size', width, height);
+        });
+
+        // Start
+        loadDocument();
+    });
+    </script>
+</body>
+</html>
