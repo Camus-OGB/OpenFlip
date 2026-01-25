@@ -929,11 +929,48 @@
         });
 
         // Fullscreen
+        let fullscreenZoomIndex = null;
+        
         $('#fullscreenBtn').on('click', function() {
             if (document.fullscreenElement) {
                 document.exitFullscreen();
             } else {
                 document.documentElement.requestFullscreen();
+            }
+        });
+
+        document.addEventListener('fullscreenchange', function() {
+            if (document.fullscreenElement) {
+                // Entrer en plein écran: sauvegarder le zoom actuel et agrandir
+                fullscreenZoomIndex = zoomIndex;
+                // Calculer le zoom optimal pour remplir l'écran
+                const viewportHeight = window.innerHeight - 150; // Moins les contrôles
+                const viewportWidth = window.innerWidth - 100;
+                const bookHeight = currentEffect === 'flip' ? 600 : 500;
+                const bookWidth = currentEffect === 'flip' ? 900 : 400;
+                const scaleH = viewportHeight / bookHeight;
+                const scaleW = viewportWidth / bookWidth;
+                const optimalScale = Math.min(scaleH, scaleW, 1.5); // Max 150%
+                
+                // Trouver le niveau de zoom le plus proche
+                let bestIndex = zoomIndex;
+                let minDiff = Infinity;
+                zoomLevels.forEach((level, i) => {
+                    const diff = Math.abs(level - optimalScale);
+                    if (diff < minDiff) {
+                        minDiff = diff;
+                        bestIndex = i;
+                    }
+                });
+                zoomIndex = bestIndex;
+                applyZoom();
+            } else {
+                // Sortir du plein écran: restaurer le zoom précédent
+                if (fullscreenZoomIndex !== null) {
+                    zoomIndex = fullscreenZoomIndex;
+                    fullscreenZoomIndex = null;
+                    applyZoom();
+                }
             }
         });
 

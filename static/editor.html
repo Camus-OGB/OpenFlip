@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Éditeur - OpenFlip</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: { 50: '#faf5ff', 100: '#f3e8ff', 500: '#a855f7', 600: '#9333ea', 700: '#7c3aed' }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        * { box-sizing: border-box; }
+        .page-thumb { cursor: pointer; transition: all 0.2s; border: 3px solid transparent; }
+        .page-thumb:hover { transform: scale(1.03); }
+        .page-thumb.active { border-color: #9333ea; box-shadow: 0 0 0 2px rgba(147, 51, 234, 0.3); }
+        #canvasWrapper { position: relative; display: inline-block; user-select: none; }
+        #pageImage { display: block; max-height: 75vh; width: auto; pointer-events: none; }
+        #elementsLayer { position: absolute; top: 0; left: 0; right: 0; bottom: 0; overflow: hidden; }
+        .interactive-element {
+            position: absolute; border-radius: 6px; cursor: move;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            transition: box-shadow 0.2s; touch-action: none;
+        }
+        .interactive-element:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.25); }
+        .interactive-element.selected { outline: 3px solid #9333ea; outline-offset: 2px; }
+        .element-video { background: linear-gradient(135deg, #fecaca 0%, #fca5a5 100%); border: 2px solid #ef4444; }
+        .element-video .element-icon { color: #dc2626; }
+        .element-video .video-thumb { position: absolute; inset: 0; background-size: cover; background-position: center; opacity: 0.7; }
+        .element-link { background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); border: 2px solid #3b82f6; }
+        .element-link .element-icon { color: #2563eb; }
+        .element-image { background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); border: 2px solid #10b981; }
+        .element-image .element-icon { color: #059669; }
+        .element-image .image-preview { position: absolute; inset: 0; background-size: cover; background-position: center; }
+        .element-icon { font-size: 24px; z-index: 1; }
+        .element-label { font-size: 10px; max-width: 90%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 4px; padding: 2px 6px; background: rgba(255,255,255,0.8); border-radius: 4px; z-index: 1; }
+        .delete-btn { position: absolute; top: -8px; right: -8px; width: 22px; height: 22px; background: #ef4444; color: white; border: 2px solid white; border-radius: 50%; font-size: 12px; cursor: pointer; display: none; align-items: center; justify-content: center; z-index: 10; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        .interactive-element:hover .delete-btn, .interactive-element.selected .delete-btn { display: flex; }
+        .resize-handle { position: absolute; width: 12px; height: 12px; background: white; border: 2px solid #9333ea; border-radius: 2px; display: none; }
+        .interactive-element.selected .resize-handle { display: block; }
+        .resize-handle.se { bottom: -6px; right: -6px; cursor: se-resize; }
+        .resize-handle.sw { bottom: -6px; left: -6px; cursor: sw-resize; }
+        .resize-handle.ne { top: -6px; right: -6px; cursor: ne-resize; }
+        .resize-handle.nw { top: -6px; left: -6px; cursor: nw-resize; }
+        .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; z-index: 1000; }
+        .modal-backdrop.active { display: flex; }
+        .toolbar-btn { display: flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 8px; font-weight: 500; font-size: 14px; transition: all 0.2s; cursor: pointer; border: none; }
+        .toolbar-btn:hover { transform: translateY(-1px); }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <header class="bg-white border-b shadow-sm sticky top-0 z-50">
+        <div class="max-w-screen-2xl mx-auto px-4 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <a href="/" class="flex items-center gap-2 text-gray-800 font-semibold hover:text-primary-600 transition">
+                    <i class="fa-solid fa-book-open text-primary-600 text-xl"></i><span>OpenFlip</span>
+                </a>
+                <span class="text-gray-300">|</span>
+                <span class="text-gray-500 font-medium">Éditeur</span>
+            </div>
+            <div class="flex items-center gap-3">
+                <a href="javascript:history.back()" class="px-4 py-2 text-gray-600 hover:text-gray-800 transition"><i class="fa-solid fa-arrow-left mr-2"></i>Retour</a>
+                <button id="previewBtn" class="toolbar-btn bg-gray-100 text-gray-700 hover:bg-gray-200"><i class="fa-solid fa-eye"></i><span>Aperçu</span></button>
+                <button id="saveBtn" class="toolbar-btn bg-primary-600 text-white hover:bg-primary-700"><i class="fa-solid fa-save"></i><span>Sauvegarder</span></button>
+            </div>
+        </div>
+    </header>
+
+    <div class="flex h-[calc(100vh-64px)]">
+        <aside class="w-44 bg-white border-r flex flex-col">
+            <div class="p-3 border-b bg-gray-50"><h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Pages</h3></div>
+            <div id="pagesList" class="flex-1 overflow-y-auto p-3 space-y-3"></div>
+        </aside>
+
+        <main class="flex-1 overflow-auto bg-gray-200 flex flex-col">
+            <div class="bg-white border-b p-3 flex items-center gap-4 flex-wrap shadow-sm">
+                <div class="flex items-center gap-2">
+                    <label class="text-sm text-gray-600 font-medium">Titre:</label>
+                    <input type="text" id="titleInput" class="px-3 py-2 border border-gray-300 rounded-lg text-sm w-72 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition">
+                </div>
+                <div class="h-8 w-px bg-gray-200"></div>
+                <button id="addLinkBtn" class="toolbar-btn bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200"><i class="fa-solid fa-link"></i><span>Lien</span></button>
+                <button id="addVideoBtn" class="toolbar-btn bg-red-50 text-red-700 hover:bg-red-100 border border-red-200"><i class="fa-brands fa-youtube"></i><span>Vidéo</span></button>
+                <button id="addImageBtn" class="toolbar-btn bg-green-50 text-green-700 hover:bg-green-100 border border-green-200"><i class="fa-solid fa-image"></i><span>Image</span></button>
+            </div>
+            <div class="flex-1 flex items-center justify-center p-6">
+                <div id="canvasWrapper" class="bg-white rounded-xl shadow-2xl">
+                    <img id="pageImage" src="" alt="Page du flipbook">
+                    <div id="elementsLayer"></div>
+                </div>
+            </div>
+            <div class="bg-white border-t p-2 text-center text-sm text-gray-500">
+                Page <span id="currentPageNum" class="font-semibold text-gray-700">1</span> / <span id="totalPages">1</span>
+                <span class="mx-3 text-gray-300">|</span>
+                <span id="elementCount" class="text-gray-400">0 élément(s)</span>
+            </div>
+        </main>
+
+        <aside class="w-72 bg-white border-l flex flex-col">
+            <div class="p-3 border-b bg-gray-50"><h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Propriétés</h3></div>
+            <div id="propertiesPanel" class="flex-1 overflow-y-auto p-4">
+                <div class="text-center text-gray-400 py-8"><i class="fa-solid fa-mouse-pointer text-3xl mb-3 opacity-50"></i><p class="text-sm">Sélectionnez un élément</p></div>
+            </div>
+            <div class="border-t p-4">
+                <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Liens PDF détectés</h4>
+                <div id="extractedLinks" class="space-y-2 max-h-40 overflow-y-auto text-sm"><p class="text-gray-400 text-xs">Aucun lien</p></div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Modals -->
+    <div id="linkModal" class="modal-backdrop">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+            <div class="flex items-center gap-3 mb-6"><div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center"><i class="fa-solid fa-link text-blue-600"></i></div><h3 class="text-lg font-semibold">Ajouter un lien</h3></div>
+            <div class="space-y-4">
+                <div><label class="block text-sm font-medium text-gray-700 mb-2">URL</label><input type="url" id="linkUrl" placeholder="https://..." class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"></div>
+                <div><label class="block text-sm font-medium text-gray-700 mb-2">Titre (optionnel)</label><input type="text" id="linkTitle" placeholder="Cliquez ici" class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"></div>
+            </div>
+            <div class="flex gap-3 mt-6">
+                <button onclick="closeModal('linkModal')" class="flex-1 px-4 py-3 border rounded-lg hover:bg-gray-50">Annuler</button>
+                <button onclick="confirmAddLink()" class="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Ajouter</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="videoModal" class="modal-backdrop">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+            <div class="flex items-center gap-3 mb-6"><div class="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center"><i class="fa-brands fa-youtube text-red-600"></i></div><h3 class="text-lg font-semibold">Ajouter une vidéo</h3></div>
+            <div class="space-y-4">
+                <div><label class="block text-sm font-medium text-gray-700 mb-2">URL YouTube</label><input type="url" id="videoUrl" placeholder="https://youtube.com/watch?v=..." class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none"></div>
+                <div id="videoPreview" class="hidden"><img id="videoThumb" src="" class="w-full h-32 object-cover rounded-lg"></div>
+            </div>
+            <div class="flex gap-3 mt-6">
+                <button onclick="closeModal('videoModal')" class="flex-1 px-4 py-3 border rounded-lg hover:bg-gray-50">Annuler</button>
+                <button onclick="confirmAddVideo()" class="flex-1 px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700">Ajouter</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="imageModal" class="modal-backdrop">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+            <div class="flex items-center gap-3 mb-6"><div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center"><i class="fa-solid fa-image text-green-600"></i></div><h3 class="text-lg font-semibold">Ajouter une image</h3></div>
+            <div class="space-y-4">
+                <div><label class="block text-sm font-medium text-gray-700 mb-2">URL de l'image</label><input type="url" id="imageUrl" placeholder="https://..." class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none"></div>
+                <div><label class="block text-sm font-medium text-gray-700 mb-2">Lien au clic (optionnel)</label><input type="url" id="imageLinkUrl" placeholder="https://..." class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none"></div>
+            </div>
+            <div class="flex gap-3 mt-6">
+                <button onclick="closeModal('imageModal')" class="flex-1 px-4 py-3 border rounded-lg hover:bg-gray-50">Annuler</button>
+                <button onclick="confirmAddImage()" class="flex-1 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700">Ajouter</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="editModal" class="modal-backdrop">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+            <div class="flex items-center gap-3 mb-6"><div class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center"><i class="fa-solid fa-pen text-gray-600"></i></div><h3 class="text-lg font-semibold">Modifier l'élément</h3></div>
+            <div id="editModalContent" class="space-y-4"></div>
+            <div class="flex gap-3 mt-6">
+                <button onclick="closeModal('editModal')" class="flex-1 px-4 py-3 border rounded-lg hover:bg-gray-50">Annuler</button>
+                <button onclick="confirmEditElement()" class="flex-1 px-4 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700">Enregistrer</button>
+            </div>
+        </div>
+    </div>
+
+<script>
+(function() {
+    'use strict';
+
+    let flipbookData = null;
+    let currentPage = 1;
+    let selectedElementId = null;
+    let editingElementId = null;
+
+    const docId = window.location.pathname.split('/').pop();
+    const $pageImage = document.getElementById('pageImage');
+    const $elementsLayer = document.getElementById('elementsLayer');
+    const $canvasWrapper = document.getElementById('canvasWrapper');
+
+    // Utils
+    function getYouTubeId(url) {
+        const match = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+        return match ? match[1] : null;
+    }
+    function getYouTubeThumbnail(url) {
+        const id = getYouTubeId(url);
+        return id ? `https://img.youtube.com/vi/${id}/mqdefault.jpg` : null;
+    }
+    function truncateUrl(url, maxLen = 30) {
+        if (!url) return '';
+        try { const u = new URL(url); let d = u.hostname + u.pathname; return d.length > maxLen ? d.substring(0, maxLen) + '...' : d; }
+        catch { return url.length > maxLen ? url.substring(0, maxLen) + '...' : url; }
+    }
+    function generateId() { return 'el_' + Math.random().toString(36).substr(2, 9); }
+
+    // Pixel <-> Percent
+    function getCanvasDimensions() { const r = $canvasWrapper.getBoundingClientRect(); return { width: r.width, height: r.height }; }
+    function percentToPixel(p, d) { return (p / 100) * d; }
+    function pixelToPercent(p, d) { return (p / d) * 100; }
+    function getElementPositionInPercent(el) {
+        const c = getCanvasDimensions();
+        return { x: pixelToPercent(parseFloat(el.style.left) || 0, c.width), y: pixelToPercent(parseFloat(el.style.top) || 0, c.height), width: pixelToPercent(el.offsetWidth, c.width), height: pixelToPercent(el.offsetHeight, c.height) };
+    }
+
+    // Data
+    function getCurrentPageData() { return flipbookData?.pages?.find(p => p.page_number === currentPage); }
+    function getCustomElements() { const p = getCurrentPageData(); if (!p) return []; if (!p.metadata.custom_elements) p.metadata.custom_elements = []; return p.metadata.custom_elements; }
+    function findElementById(id) { return getCustomElements().find(el => el.id === id); }
+    function updateElementData(id, updates) { const el = findElementById(id); if (el) Object.assign(el, updates); }
+    function deleteElementData(id) { const p = getCurrentPageData(); if (!p) return; const i = p.metadata.custom_elements.findIndex(el => el.id === id); if (i !== -1) p.metadata.custom_elements.splice(i, 1); }
+
+    // Render pages
+    function renderPagesList() {
+        const c = document.getElementById('pagesList'); c.innerHTML = '';
+        flipbookData.pages.forEach(page => {
+            const d = document.createElement('div');
+            d.className = `page-thumb rounded-lg overflow-hidden bg-white shadow ${currentPage === page.page_number ? 'active' : ''}`;
+            d.innerHTML = `<img src="${page.image_url}" class="w-full"><div class="text-xs text-center py-1 bg-gray-50 font-medium">${page.page_number}</div>`;
+            d.onclick = () => loadPage(page.page_number);
+            c.appendChild(d);
+        });
+    }
+
+    // Render elements
+    function renderElements() {
+        $elementsLayer.innerHTML = '';
+        const elements = getCustomElements();
+        const canvas = getCanvasDimensions();
+        elements.forEach(data => {
+            const el = createElementDOM(data, canvas);
+            $elementsLayer.appendChild(el);
+            initInteract(el);
+        });
+        updateElementCount();
+        updatePropertiesPanel();
+    }
+
+    function createElementDOM(data, canvas) {
+        const el = document.createElement('div');
+        el.className = `interactive-element element-${data.type}`;
+        el.id = data.id;
+        el.dataset.type = data.type;
+        el.style.left = percentToPixel(data.x, canvas.width) + 'px';
+        el.style.top = percentToPixel(data.y, canvas.height) + 'px';
+        el.style.width = percentToPixel(data.width, canvas.width) + 'px';
+        el.style.height = percentToPixel(data.height, canvas.height) + 'px';
+
+        let content = '';
+        if (data.type === 'video') {
+            const thumb = getYouTubeThumbnail(data.url);
+            if (thumb) content += `<div class="video-thumb" style="background-image: url('${thumb}')"></div>`;
+            content += `<i class="fa-brands fa-youtube element-icon"></i><span class="element-label">${truncateUrl(data.url, 20)}</span>`;
+        } else if (data.type === 'link') {
+            content += `<i class="fa-solid fa-link element-icon"></i><span class="element-label">${data.title || truncateUrl(data.url, 20)}</span>`;
+        } else if (data.type === 'image') {
+            if (data.url) content += `<div class="image-preview" style="background-image: url('${data.url}')"></div>`;
+            else content += `<i class="fa-solid fa-image element-icon"></i>`;
+        }
+        content += `<button class="delete-btn" onclick="event.stopPropagation(); window.deleteElement('${data.id}')"><i class="fa-solid fa-times"></i></button>`;
+        content += `<div class="resize-handle se"></div><div class="resize-handle sw"></div><div class="resize-handle ne"></div><div class="resize-handle nw"></div>`;
+        el.innerHTML = content;
+
+        el.addEventListener('click', e => { e.stopPropagation(); selectElement(data.id); });
+        el.addEventListener('dblclick', e => { e.stopPropagation(); openEditModal(data.id); });
+        if (selectedElementId === data.id) el.classList.add('selected');
+        return el;
+    }
+
+    function updateElementCount() { document.getElementById('elementCount').textContent = `${getCustomElements().length} élément(s)`; }
+
+    // Interact.js
+    function initInteract(el) {
+        interact(el).draggable({
+            inertia: false,
+            modifiers: [interact.modifiers.restrictRect({ restriction: 'parent', endOnly: false })],
+            listeners: {
+                start(e) { selectElement(e.target.id); },
+                move(e) { const t = e.target; t.style.left = (parseFloat(t.style.left) || 0) + e.dx + 'px'; t.style.top = (parseFloat(t.style.top) || 0) + e.dy + 'px'; },
+                end(e) { syncElementToData(e.target); }
+            }
+        }).resizable({
+            edges: { left: true, right: true, bottom: true, top: true },
+            modifiers: [interact.modifiers.restrictEdges({ outer: 'parent' }), interact.modifiers.restrictSize({ min: { width: 40, height: 30 } })],
+            inertia: false,
+            listeners: {
+                start(e) { selectElement(e.target.id); },
+                move(e) { const t = e.target; t.style.width = e.rect.width + 'px'; t.style.height = e.rect.height + 'px'; t.style.left = (parseFloat(t.style.left) || 0) + e.deltaRect.left + 'px'; t.style.top = (parseFloat(t.style.top) || 0) + e.deltaRect.top + 'px'; },
+                end(e) { syncElementToData(e.target); }
+            }
+        });
+    }
+
+    function syncElementToData(domEl) {
+        const pos = getElementPositionInPercent(domEl);
+        updateElementData(domEl.id, { x: Math.round(pos.x * 100) / 100, y: Math.round(pos.y * 100) / 100, width: Math.round(pos.width * 100) / 100, height: Math.round(pos.height * 100) / 100 });
+    }
+
+    // Selection
+    function selectElement(id) {
+        selectedElementId = id;
+        document.querySelectorAll('.interactive-element').forEach(el => el.classList.toggle('selected', el.id === id));
+        updatePropertiesPanel();
+    }
+    function deselectAll() { selectedElementId = null; document.querySelectorAll('.interactive-element').forEach(el => el.classList.remove('selected')); updatePropertiesPanel(); }
+
+    // Properties panel
+    function updatePropertiesPanel() {
+        const panel = document.getElementById('propertiesPanel');
+        if (!selectedElementId) { panel.innerHTML = `<div class="text-center text-gray-400 py-8"><i class="fa-solid fa-mouse-pointer text-3xl mb-3 opacity-50"></i><p class="text-sm">Sélectionnez un élément</p></div>`; return; }
+        const data = findElementById(selectedElementId);
+        if (!data) return;
+        const icons = { video: 'fa-brands fa-youtube', link: 'fa-solid fa-link', image: 'fa-solid fa-image' };
+        const colors = { video: 'red', link: 'blue', image: 'green' };
+        panel.innerHTML = `
+            <div class="space-y-4">
+                <div class="flex items-center gap-3 p-3 bg-${colors[data.type]}-50 rounded-lg"><i class="${icons[data.type]} text-${colors[data.type]}-600 text-xl"></i><span class="font-medium capitalize">${data.type}</span></div>
+                <div><label class="block text-xs text-gray-500 mb-1">URL</label><input type="url" value="${data.url || ''}" onchange="window.updateProp('${data.id}', 'url', this.value)" class="w-full px-3 py-2 border rounded-lg text-sm"></div>
+                ${data.type === 'link' ? `<div><label class="block text-xs text-gray-500 mb-1">Titre</label><input type="text" value="${data.title || ''}" onchange="window.updateProp('${data.id}', 'title', this.value)" class="w-full px-3 py-2 border rounded-lg text-sm"></div>` : ''}
+                ${data.type === 'image' ? `<div><label class="block text-xs text-gray-500 mb-1">Lien au clic</label><input type="url" value="${data.linkUrl || ''}" onchange="window.updateProp('${data.id}', 'linkUrl', this.value)" class="w-full px-3 py-2 border rounded-lg text-sm"></div>` : ''}
+                <div class="grid grid-cols-2 gap-2 text-xs text-gray-500">
+                    <div>X: ${data.x.toFixed(1)}%</div><div>Y: ${data.y.toFixed(1)}%</div>
+                    <div>W: ${data.width.toFixed(1)}%</div><div>H: ${data.height.toFixed(1)}%</div>
+                </div>
+                <button onclick="window.deleteElement('${data.id}')" class="w-full px-4 py-2 bg-red-100 text-red-700 rounded-lg text-sm hover:bg-red-200 transition"><i class="fa-solid fa-trash mr-2"></i>Supprimer</button>
+            </div>
+        `;
+    }
+
+    // Global functions
+    window.updateProp = (id, prop, value) => { updateElementData(id, { [prop]: value }); renderElements(); };
+    window.deleteElement = (id) => { deleteElementData(id); renderElements(); };
+    window.openModal = (id) => document.getElementById(id).classList.add('active');
+    window.closeModal = (id) => document.getElementById(id).classList.remove('active');
+
+    function addElement(type, data) {
+        const elements = getCustomElements();
+        elements.push({ id: generateId(), type, x: 10, y: 10, width: 20, height: 15, ...data });
+        renderElements();
+    }
+
+    window.confirmAddLink = () => {
+        const url = document.getElementById('linkUrl').value.trim();
+        const title = document.getElementById('linkTitle').value.trim();
+        if (!url) return alert('URL requise');
+        addElement('link', { url, title });
+        document.getElementById('linkUrl').value = '';
+        document.getElementById('linkTitle').value = '';
+        closeModal('linkModal');
+    };
+
+    window.confirmAddVideo = () => {
+        const url = document.getElementById('videoUrl').value.trim();
+        if (!url) return alert('URL requise');
+        addElement('video', { url });
+        document.getElementById('videoUrl').value = '';
+        closeModal('videoModal');
+    };
+
+    window.confirmAddImage = () => {
+        const url = document.getElementById('imageUrl').value.trim();
+        const linkUrl = document.getElementById('imageLinkUrl').value.trim();
+        if (!url) return alert('URL requise');
+        addElement('image', { url, linkUrl });
+        document.getElementById('imageUrl').value = '';
+        document.getElementById('imageLinkUrl').value = '';
+        closeModal('imageModal');
+    };
+
+    function openEditModal(id) {
+        editingElementId = id;
+        const data = findElementById(id);
+        if (!data) return;
+        const content = document.getElementById('editModalContent');
+        content.innerHTML = `
+            <div><label class="block text-sm font-medium mb-2">URL</label><input type="url" id="editUrl" value="${data.url || ''}" class="w-full px-4 py-3 border rounded-lg"></div>
+            ${data.type === 'link' ? `<div><label class="block text-sm font-medium mb-2">Titre</label><input type="text" id="editTitle" value="${data.title || ''}" class="w-full px-4 py-3 border rounded-lg"></div>` : ''}
+            ${data.type === 'image' ? `<div><label class="block text-sm font-medium mb-2">Lien au clic</label><input type="url" id="editLinkUrl" value="${data.linkUrl || ''}" class="w-full px-4 py-3 border rounded-lg"></div>` : ''}
+        `;
+        openModal('editModal');
+    }
+
+    window.confirmEditElement = () => {
+        if (!editingElementId) return;
+        const data = findElementById(editingElementId);
+        if (!data) return;
+        data.url = document.getElementById('editUrl')?.value || data.url;
+        if (data.type === 'link') data.title = document.getElementById('editTitle')?.value || '';
+        if (data.type === 'image') data.linkUrl = document.getElementById('editLinkUrl')?.value || '';
+        renderElements();
+        closeModal('editModal');
+        editingElementId = null;
+    };
+
+    // Extracted links
+    function renderExtractedLinks(links) {
+        const c = document.getElementById('extractedLinks');
+        if (!links || links.length === 0) { c.innerHTML = '<p class="text-gray-400 text-xs">Aucun lien</p>'; return; }
+        c.innerHTML = links.map(l => `<a href="${l.url}" target="_blank" class="block p-2 bg-blue-50 rounded text-blue-600 hover:bg-blue-100 truncate text-xs" title="${l.url}">${truncateUrl(l.url, 35)}</a>`).join('');
+    }
+
+    // Load
+    async function loadEditorData() {
+        try {
+            const res = await fetch(`/api/editor/${docId}`);
+            if (!res.ok) throw new Error('Flipbook not found');
+            flipbookData = await res.json();
+            document.getElementById('titleInput').value = flipbookData.title;
+            document.getElementById('totalPages').textContent = flipbookData.page_count;
+            renderPagesList();
+            loadPage(1);
+        } catch (e) { alert('Erreur: ' + e.message); }
+    }
+
+    function loadPage(pageNum) {
+        currentPage = pageNum;
+        const page = getCurrentPageData();
+        if (!page) return;
+        $pageImage.onload = () => renderElements();
+        $pageImage.src = page.image_url;
+        document.getElementById('currentPageNum').textContent = pageNum;
+        renderPagesList();
+        renderExtractedLinks(page.metadata.links || []);
+    }
+
+    // Save
+    document.getElementById('saveBtn').onclick = async () => {
+        const btn = document.getElementById('saveBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>Sauvegarde...';
+        try {
+            const payload = { title: document.getElementById('titleInput').value, pages: flipbookData.pages.map(p => ({ page_number: p.page_number, metadata: p.metadata })) };
+            const res = await fetch(`/api/editor/${docId}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+            if (!res.ok) throw new Error('Erreur');
+            btn.innerHTML = '<i class="fa-solid fa-check mr-2"></i>Sauvegardé !';
+            setTimeout(() => { btn.innerHTML = '<i class="fa-solid fa-save"></i><span>Sauvegarder</span>'; btn.disabled = false; }, 2000);
+        } catch (e) { alert('Erreur: ' + e.message); btn.innerHTML = '<i class="fa-solid fa-save"></i><span>Sauvegarder</span>'; btn.disabled = false; }
+    };
+
+    // Preview
+    document.getElementById('previewBtn').onclick = () => window.open(`/reader/${docId}`, '_blank');
+
+    // Events
+    document.getElementById('addLinkBtn').onclick = () => openModal('linkModal');
+    document.getElementById('addVideoBtn').onclick = () => openModal('videoModal');
+    document.getElementById('addImageBtn').onclick = () => openModal('imageModal');
+    $canvasWrapper.addEventListener('click', e => { if (e.target === $canvasWrapper || e.target === $pageImage || e.target === $elementsLayer) deselectAll(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Delete' && selectedElementId) { deleteElement(selectedElementId); } if (e.key === 'Escape') deselectAll(); });
+
+    // Video URL preview
+    document.getElementById('videoUrl').addEventListener('input', e => {
+        const thumb = getYouTubeThumbnail(e.target.value);
+        const preview = document.getElementById('videoPreview');
+        const img = document.getElementById('videoThumb');
+        if (thumb) { img.src = thumb; preview.classList.remove('hidden'); }
+        else { preview.classList.add('hidden'); }
+    });
+
+    loadEditorData();
+})();
+</script>
+</body>
+</html>
