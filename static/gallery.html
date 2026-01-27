@@ -3,111 +3,342 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Galerie - OpenFlip</title>
+    <title>Mes Flipbooks - OpenFlip</title>
+
+    <!-- Google Fonts - Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
             theme: {
                 extend: {
-                    colors: {
-                        primary: {
-                            50: '#faf5ff',
-                            100: '#f3e8ff',
-                            500: '#c084fc',
-                            600: '#a855f7',
-                            700: '#9333ea',
-                        }
-                    }
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
                 }
             }
         }
     </script>
-</head>
-<body class="bg-gray-50 text-gray-900 min-h-screen">
-    <!-- Header -->
-    <header class="bg-white border-b sticky top-0 z-50">
-        <div class="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
-            <a href="/" class="font-semibold flex items-center gap-2">
-                <svg class="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
-                </svg>
-                OpenFlip
-            </a>
-            <a href="/upload" class="text-sm px-4 py-2 bg-primary-600 text-white font-medium rounded-lg hover:bg-primary-700 transition-colors">
-                + Nouveau
-            </a>
-        </div>
-    </header>
 
-    <main class="max-w-6xl mx-auto px-4 py-8">
-        <button onclick="history.back()" class="text-sm text-gray-500 hover:text-gray-700 mb-6 flex items-center gap-1">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-            </svg>
-            Retour
-        </button>
-        <!-- Header -->
-        <div class="flex items-center justify-between mb-8">
-            <div>
-                <h1 class="text-3xl font-bold">Tous les flipbooks</h1>
-                <p class="text-gray-500 mt-1" id="countText">Chargement...</p>
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body class="bg-slate-50 text-slate-900 font-sans antialiased min-h-screen flex flex-col">
+
+    <!-- Navbar Sticky -->
+    <nav class="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <!-- Logo -->
+                <a href="/" class="flex items-center gap-2 group">
+                    <div class="w-8 h-8 bg-gradient-to-br from-indigo-600 to-indigo-500 rounded-lg flex items-center justify-center shadow-sm">
+                        <i class="fa-solid fa-book-open text-white text-sm"></i>
+                    </div>
+                    <span class="font-semibold text-lg">
+                        <span class="text-indigo-600">Open</span><span class="text-slate-700">Flip</span>
+                    </span>
+                </a>
+
+                <!-- Navigation Links (Desktop) -->
+                <div class="hidden md:flex items-center gap-8">
+                    <a href="/" class="text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors">Accueil</a>
+                    <a href="/gallery" class="text-sm font-medium text-slate-900 hover:text-indigo-600 transition-colors">Galerie</a>
+                    <a href="/#demo" class="text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors">Exemples</a>
+                </div>
+
+                <!-- CTA Button -->
+                <a href="/upload" class="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-indigo-500 text-white text-sm font-medium rounded-lg hover:from-indigo-700 hover:to-indigo-600 transition-all shadow-sm hover:shadow-md">
+                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                    <span class="hidden sm:inline">Uploader un PDF</span>
+                    <span class="sm:hidden">Uploader</span>
+                </a>
             </div>
         </div>
+    </nav>
 
-        <!-- Grid -->
-        <div id="galleryGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            <!-- Chargé dynamiquement -->
-        </div>
+    <!-- Main Content -->
+    <main class="flex-1" x-data="galleryApp()">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
-        <!-- Empty state -->
-        <div id="emptyState" class="hidden text-center py-16">
-            <svg class="w-16 h-16 mx-auto text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
-            </svg>
-            <h2 class="text-xl font-semibold mt-4">Aucun flipbook</h2>
-            <p class="text-gray-500 mt-2">Commencez par créer votre premier flipbook</p>
-            <a href="/upload" class="inline-block mt-6 px-6 py-3 bg-primary-600 text-white font-medium rounded-lg hover:bg-primary-700 transition-colors">
-                Créer un flipbook
-            </a>
+            <!-- Dashboard Header -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+                <div>
+                    <h1 class="text-2xl sm:text-3xl font-bold text-slate-900">Mes Flipbooks</h1>
+                    <p class="text-slate-500 mt-1" x-text="countText">Chargement...</p>
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <!-- Barre de recherche -->
+                    <div class="relative">
+                        <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                        <input
+                            type="text"
+                            placeholder="Rechercher..."
+                            x-model="searchQuery"
+                            @input="filterFlipbooks()"
+                            class="pl-9 pr-4 py-2.5 w-48 sm:w-64 bg-white border border-slate-200 rounded-lg text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                        >
+                    </div>
+
+                    <!-- Bouton Nouveau -->
+                    <a href="/upload" class="inline-flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-indigo-500 text-white text-sm font-medium rounded-lg hover:from-indigo-700 hover:to-indigo-600 transition-all shadow-sm hover:shadow-md">
+                        <i class="fa-solid fa-plus"></i>
+                        <span class="hidden sm:inline">Nouveau</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Grille de Flipbooks -->
+            <div
+                x-show="!loading && filteredFlipbooks.length > 0"
+                x-transition:enter="transition ease-out duration-300"
+                x-transition:enter-start="opacity-0"
+                x-transition:enter-end="opacity-100"
+                class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+            >
+                <template x-for="flipbook in filteredFlipbooks" :key="flipbook.id">
+                    <div class="group relative bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 hover:scale-105">
+                        <!-- Image Cover (ratio 3:4) -->
+                        <a :href="'/reader/' + flipbook.id" class="block">
+                            <div class="aspect-[3/4] bg-slate-100 overflow-hidden relative">
+                                <img
+                                    :src="flipbook.thumbnail"
+                                    :alt="flipbook.title"
+                                    class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                                >
+                                <!-- Overlay au survol -->
+                                <div class="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                            </div>
+                        </a>
+
+                        <!-- Actions au survol -->
+                        <div class="absolute top-3 right-3 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
+                            <a
+                                :href="'/editor/' + flipbook.id"
+                                class="w-9 h-9 bg-white/90 backdrop-blur-sm rounded-lg flex items-center justify-center text-slate-700 hover:bg-indigo-600 hover:text-white transition-colors shadow-lg"
+                                title="Editer"
+                            >
+                                <i class="fa-solid fa-pen text-sm"></i>
+                            </a>
+                            <a
+                                :href="'/reader/' + flipbook.id"
+                                class="w-9 h-9 bg-white/90 backdrop-blur-sm rounded-lg flex items-center justify-center text-slate-700 hover:bg-indigo-600 hover:text-white transition-colors shadow-lg"
+                                title="Voir"
+                            >
+                                <i class="fa-solid fa-eye text-sm"></i>
+                            </a>
+                        </div>
+
+                        <!-- Badge pages -->
+                        <div class="absolute top-3 left-3 px-2 py-1 bg-slate-900/70 backdrop-blur-sm text-white text-xs font-medium rounded-full">
+                            <span x-text="flipbook.pages + ' pages'"></span>
+                        </div>
+
+                        <!-- Infos -->
+                        <div class="p-4">
+                            <h3 class="font-semibold text-slate-900 truncate" x-text="flipbook.title"></h3>
+                            <p class="text-slate-500 text-sm mt-1" x-text="formatDate(flipbook.created_at)"></p>
+                        </div>
+                    </div>
+                </template>
+            </div>
+
+            <!-- Loading State -->
+            <div x-show="loading" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <template x-for="i in 4">
+                    <div class="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm animate-pulse">
+                        <div class="aspect-[3/4] bg-slate-200"></div>
+                        <div class="p-4">
+                            <div class="h-4 bg-slate-200 rounded w-3/4 mb-2"></div>
+                            <div class="h-3 bg-slate-100 rounded w-1/2"></div>
+                        </div>
+                    </div>
+                </template>
+            </div>
+
+            <!-- Empty State -->
+            <div
+                x-show="!loading && flipbooks.length === 0"
+                x-transition:enter="transition ease-out duration-300"
+                x-transition:enter-start="opacity-0 scale-95"
+                x-transition:enter-end="opacity-100 scale-100"
+                class="text-center py-20"
+            >
+                <!-- Illustration SVG -->
+                <div class="mx-auto w-64 h-64 mb-8">
+                    <svg viewBox="0 0 400 300" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-full h-full">
+                        <!-- Background circle -->
+                        <circle cx="200" cy="150" r="120" fill="#EEF2FF" />
+
+                        <!-- Book pages -->
+                        <rect x="120" y="80" width="80" height="110" rx="4" fill="white" stroke="#C7D2FE" stroke-width="2"/>
+                        <rect x="130" y="95" width="40" height="4" rx="2" fill="#E0E7FF"/>
+                        <rect x="130" y="105" width="55" height="3" rx="1.5" fill="#F1F5F9"/>
+                        <rect x="130" y="113" width="50" height="3" rx="1.5" fill="#F1F5F9"/>
+                        <rect x="130" y="121" width="45" height="3" rx="1.5" fill="#F1F5F9"/>
+                        <rect x="130" y="135" width="55" height="35" rx="4" fill="#EEF2FF"/>
+
+                        <!-- Second book (tilted) -->
+                        <g transform="rotate(12 240 130)">
+                            <rect x="200" y="75" width="80" height="110" rx="4" fill="white" stroke="#C7D2FE" stroke-width="2"/>
+                            <rect x="210" y="90" width="40" height="4" rx="2" fill="#E0E7FF"/>
+                            <rect x="210" y="100" width="55" height="3" rx="1.5" fill="#F1F5F9"/>
+                            <rect x="210" y="108" width="50" height="3" rx="1.5" fill="#F1F5F9"/>
+                            <rect x="210" y="130" width="55" height="35" rx="4" fill="#EEF2FF"/>
+                        </g>
+
+                        <!-- Plus icon -->
+                        <circle cx="200" cy="200" r="25" fill="#4F46E5"/>
+                        <rect x="195" y="187" width="10" height="26" rx="2" fill="white"/>
+                        <rect x="187" y="195" width="26" height="10" rx="2" fill="white"/>
+
+                        <!-- Decorative dots -->
+                        <circle cx="100" cy="100" r="5" fill="#C7D2FE"/>
+                        <circle cx="300" cy="90" r="4" fill="#C7D2FE"/>
+                        <circle cx="320" cy="180" r="6" fill="#E0E7FF"/>
+                        <circle cx="80" cy="170" r="4" fill="#E0E7FF"/>
+                    </svg>
+                </div>
+
+                <h2 class="text-2xl font-bold text-slate-900">Aucun flipbook pour l'instant</h2>
+                <p class="text-slate-500 mt-3 max-w-md mx-auto">
+                    Commencez par importer votre premier PDF et transformez-le en flipbook interactif en quelques secondes.
+                </p>
+
+                <a href="/upload" class="inline-flex items-center gap-2 mt-8 px-6 py-3 bg-gradient-to-r from-indigo-600 to-indigo-500 text-white font-medium rounded-xl hover:from-indigo-700 hover:to-indigo-600 transition-all shadow-md hover:shadow-lg transform hover:scale-105">
+                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                    Creer mon premier flipbook
+                </a>
+            </div>
+
+            <!-- No Results State (recherche sans resultats) -->
+            <div
+                x-show="!loading && flipbooks.length > 0 && filteredFlipbooks.length === 0"
+                x-transition:enter="transition ease-out duration-300"
+                x-transition:enter-start="opacity-0"
+                x-transition:enter-end="opacity-100"
+                class="text-center py-16"
+            >
+                <div class="w-16 h-16 mx-auto bg-slate-100 rounded-2xl flex items-center justify-center mb-4">
+                    <i class="fa-solid fa-search text-slate-400 text-2xl"></i>
+                </div>
+                <h3 class="text-lg font-semibold text-slate-900">Aucun resultat</h3>
+                <p class="text-slate-500 mt-2">Aucun flipbook ne correspond a "<span x-text="searchQuery" class="font-medium"></span>"</p>
+                <button
+                    @click="searchQuery = ''; filterFlipbooks()"
+                    class="mt-4 text-indigo-600 font-medium hover:text-indigo-700 transition-colors"
+                >
+                    Effacer la recherche
+                </button>
+            </div>
+
         </div>
     </main>
 
-    <script>
-        async function loadGallery() {
-            try {
-                const res = await fetch('/api/documents?limit=50');
-                const docs = await res.json();
-                
-                const grid = document.getElementById('galleryGrid');
-                const emptyState = document.getElementById('emptyState');
-                const countText = document.getElementById('countText');
-                
-                if (docs.length === 0) {
-                    grid.classList.add('hidden');
-                    emptyState.classList.remove('hidden');
-                    countText.textContent = '0 flipbook';
-                    return;
-                }
-                
-                countText.textContent = `${docs.length} flipbook${docs.length > 1 ? 's' : ''}`;
-                
-                grid.innerHTML = docs.map(doc => `
-                    <a href="/reader/${doc.id}" class="group block bg-white border rounded-xl overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-                        <div class="aspect-[4/3] bg-gray-100 overflow-hidden">
-                            <img src="${doc.thumbnail}" alt="${doc.title}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
-                        </div>
-                        <div class="p-4">
-                            <h3 class="font-semibold truncate">${doc.title}</h3>
-                            <p class="text-sm text-gray-500 mt-1">${doc.pages} pages</p>
-                        </div>
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 mt-auto">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div class="flex items-center gap-2">
+                    <div class="w-6 h-6 bg-gradient-to-br from-indigo-600 to-indigo-500 rounded-md flex items-center justify-center">
+                        <i class="fa-solid fa-book-open text-white text-xs"></i>
+                    </div>
+                    <span class="text-sm text-slate-600">
+                        <span class="font-medium text-indigo-600">Open</span><span class="font-medium text-slate-700">Flip</span>
+                        <span class="text-slate-400 ml-2">- Alternative Open Source a Heyzine</span>
+                    </span>
+                </div>
+                <div class="flex items-center gap-6 text-sm text-slate-500">
+                    <a href="https://github.com" target="_blank" class="hover:text-indigo-600 transition-colors">
+                        <i class="fa-brands fa-github text-lg"></i>
                     </a>
-                `).join('');
-            } catch (err) {
-                console.error('Erreur chargement galerie:', err);
+                    <span>Fait avec <i class="fa-solid fa-heart text-red-500"></i> en Open Source</span>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Alpine.js App -->
+    <script>
+        function galleryApp() {
+            return {
+                flipbooks: [],
+                filteredFlipbooks: [],
+                searchQuery: '',
+                loading: true,
+                countText: 'Chargement...',
+
+                async init() {
+                    await this.loadFlipbooks();
+                },
+
+                async loadFlipbooks() {
+                    try {
+                        const res = await fetch('/api/documents?limit=50');
+                        this.flipbooks = await res.json();
+                        this.filteredFlipbooks = [...this.flipbooks];
+                        this.updateCount();
+                    } catch (err) {
+                        console.error('Erreur chargement flipbooks:', err);
+                        this.flipbooks = [];
+                        this.filteredFlipbooks = [];
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+
+                filterFlipbooks() {
+                    const query = this.searchQuery.toLowerCase().trim();
+                    if (!query) {
+                        this.filteredFlipbooks = [...this.flipbooks];
+                    } else {
+                        this.filteredFlipbooks = this.flipbooks.filter(f =>
+                            f.title.toLowerCase().includes(query)
+                        );
+                    }
+                    this.updateCount();
+                },
+
+                updateCount() {
+                    const total = this.flipbooks.length;
+                    const filtered = this.filteredFlipbooks.length;
+
+                    if (total === 0) {
+                        this.countText = '0 flipbook';
+                    } else if (this.searchQuery && filtered !== total) {
+                        this.countText = `${filtered} sur ${total} flipbook${total > 1 ? 's' : ''}`;
+                    } else {
+                        this.countText = `${total} flipbook${total > 1 ? 's' : ''}`;
+                    }
+                },
+
+                formatDate(dateStr) {
+                    if (!dateStr) return '';
+                    const date = new Date(dateStr);
+                    const now = new Date();
+                    const diffTime = Math.abs(now - date);
+                    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+                    if (diffDays === 0) return "Aujourd'hui";
+                    if (diffDays === 1) return 'Hier';
+                    if (diffDays < 7) return `Il y a ${diffDays} jours`;
+
+                    return date.toLocaleDateString('fr-FR', {
+                        day: 'numeric',
+                        month: 'short',
+                        year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined
+                    });
+                }
             }
         }
-        
-        loadGallery();
     </script>
+
 </body>
 </html>

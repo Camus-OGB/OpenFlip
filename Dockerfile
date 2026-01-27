@@ -18,7 +18,7 @@ COPY app/ app/
 COPY static/ static/
 
 # Create storage directories
-RUN mkdir -p storage/uploads storage/pages
+RUN mkdir -p storage/uploads storage/pages storage/images
 
 # Run as root to avoid permission issues with bind mounts
 

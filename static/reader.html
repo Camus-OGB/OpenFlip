@@ -2,328 +2,297 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lecteur - OpenFlip</title>
+
+    <!-- Google Fonts - Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <!-- Turn.js Library - jQuery first, then Turn.js -->
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/turn.js/3/turn.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/blasten/turn.js@master/turn.min.js"></script>
+
+    <!-- Swiper.js Library -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css">
     <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         :root {
-            --primary: #a855f7;
-            --swiper-theme-color: #a855f7;
+            --bg-image: none;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-            min-height: 100vh;
+        html, body {
+            width: 100%;
+            height: 100%;
+            font-family: 'Inter', system-ui, sans-serif;
+            background: #0f172a;
             overflow: hidden;
-            color: white;
+            position: relative;
+            z-index: 1;
         }
 
-        /* Header */
-        .header {
-            background: rgba(0,0,0,0.3);
-            backdrop-filter: blur(10px);
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-            padding: 0 20px;
-            height: 56px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
+        body::before {
+            content: '';
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
-            z-index: 100;
-        }
-
-        .header a { 
-            color: white; 
-            text-decoration: none; 
-            font-weight: 600; 
-            display: flex; 
-            align-items: center; 
-            gap: 8px; 
-        }
-        .header svg { width: 22px; height: 22px; color: var(--primary); }
-        .header .title { 
-            color: rgba(255,255,255,0.7); 
-            font-size: 14px; 
-            max-width: 300px; 
-            overflow: hidden; 
-            text-overflow: ellipsis; 
-            white-space: nowrap;
-            position: absolute;
-            left: 50%;
-            transform: translateX(-50%);
-        }
-        .header .new-btn { 
-            color: rgba(255,255,255,0.7); 
-            font-size: 14px;
-            padding: 8px 16px;
-            border-radius: 6px;
-            transition: all 0.2s;
-        }
-        .header .new-btn:hover { 
-            color: white; 
-            background: rgba(255,255,255,0.1);
-        }
-
-        /* Main container */
-        .reader-container {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            padding: 70px 20px 90px;
-        }
-
-        /* Viewer wrapper */
-        .viewer-wrapper {
-            position: relative;
-            transition: transform 0.3s ease;
-            transform-origin: center center;
-        }
-
-        /* Turn.js Flipbook */
-        .flipbook-container {
-            position: relative;
-            perspective: 2500px;
-        }
-
-        #turnFlipbook {
-            width: 900px;
-            height: 600px;
-        }
-
-        #turnFlipbook .page {
-            background-color: white;
-        }
-
-        #turnFlipbook .page img {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-            display: block;
-        }
-
-        #turnFlipbook .page.odd {
-            background: linear-gradient(to right, #fafafa 0%, #fff 10%, #fff 90%, #f5f5f5 100%);
-            box-shadow: inset -3px 0 20px rgba(0,0,0,0.05), inset -1px 0 3px rgba(0,0,0,0.1);
-        }
-
-        #turnFlipbook .page.even {
-            background: linear-gradient(to left, #fafafa 0%, #fff 10%, #fff 90%, #f5f5f5 100%);
-            box-shadow: inset 3px 0 20px rgba(0,0,0,0.05), inset 1px 0 3px rgba(0,0,0,0.1);
-        }
-
-        .book-spine {
-            position: absolute;
-            left: 50%;
-            top: 0;
             bottom: 0;
-            width: 6px;
-            transform: translateX(-50%);
-            background: linear-gradient(to right, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.1) 20%, rgba(255,255,255,0.2) 50%, rgba(0,0,0,0.1) 80%, rgba(0,0,0,0.3) 100%);
-            z-index: 10;
+            background-image: var(--bg-image);
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            background-repeat: no-repeat;
+            z-index: -1;  /* Behind everything */
             pointer-events: none;
         }
 
-        .book-shadow {
-            position: absolute;
-            bottom: -25px;
-            left: 5%;
-            right: 5%;
-            height: 25px;
-            background: radial-gradient(ellipse at center, rgba(0,0,0,0.5) 0%, transparent 70%);
-            filter: blur(8px);
-            z-index: -1;
+        /* ================================================================ */
+        /* HEADER                                                          */
+        /* ================================================================ */
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 64px;
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            z-index: 100;
         }
 
-        /* Swiper */
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .header-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            color: white;
+            font-weight: 700;
+            font-size: 16px;
+        }
+
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #4f46e5 0%, #4f46e5 100%);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 16px;
+        }
+
+        .header-title {
+            color: #cbd5e1;
+            font-size: 14px;
+            max-width: 400px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .back-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .back-btn:hover {
+            background: #4f46e5;
+            border-color: #4f46e5;
+        }
+
+        /* ================================================================ */
+        /* MAIN CONTAINER                                                  */
+        /* ================================================================ */
+        .container {
+            position: absolute;
+            top: 64px;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+            overflow: hidden;
+            background: transparent;
+            z-index: 10;  /* Above background */
+        }
+
+        /* Reader Viewport */
+        #reader-viewport {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Turn.js Container */
+        .turn-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 20;
+        }
+
+        #book {
+            width: auto;
+            height: auto;
+            background: white;
+            box-shadow:
+                0 50px 100px rgba(0, 0, 0, 0.3),
+                0 25px 50px rgba(0, 0, 0, 0.2);
+            z-index: 20;
+            position: relative;
+            aspect-ratio: auto;
+        }
+
+        #book .my-page {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        #book .my-page img {
+            width: 100%;
+            height: 100%;
+            display: block;
+            object-fit: cover;
+        }
+
+        #book .my-page {
+            background: white;
+            display: none;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #book .my-page img {
+            width: 100%;
+            height: 100%;
+            object-fit: fill;
+            user-select: none;
+        }
+
+        /* Swiper Container */
         .swiper-container {
             width: 100%;
-            max-width: 900px;
-            height: calc(100vh - 160px);
+            height: 100%;
         }
 
         .swiper {
             width: 100%;
             height: 100%;
-            border-radius: 8px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
         }
 
         .swiper-slide {
-            background: white;
             display: flex;
             align-items: center;
             justify-content: center;
-            border-radius: 4px;
-            overflow: hidden;
+            background: transparent;
+        }
+
+        .swiper-slide .page-content {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .swiper-slide img {
-            width: 100%;
-            height: 100%;
+            max-width: 90vw;
+            max-height: 80vh;
             object-fit: contain;
-            background: white;
+            border-radius: 4px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            user-select: none;
         }
 
+        /* Swiper Navigation */
         .swiper-button-next,
         .swiper-button-prev {
             color: white;
-            background: rgba(0,0,0,0.3);
-            width: 50px;
-            height: 50px;
+            background: rgba(79, 70, 229, 0.8);
+            width: 44px;
+            height: 44px;
             border-radius: 50%;
-            backdrop-filter: blur(10px);
         }
 
         .swiper-button-next:after,
         .swiper-button-prev:after {
-            font-size: 20px;
+            font-size: 18px;
         }
 
-        /* Controls bar */
-        .controls {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: rgba(0,0,0,0.7);
-            backdrop-filter: blur(10px);
-            padding: 12px 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 12px;
-            z-index: 100;
+        .swiper-button-next:hover,
+        .swiper-button-prev:hover {
+            background: rgba(79, 70, 229, 1);
         }
 
-        .controls button {
-            background: rgba(255,255,255,0.1);
-            border: 1px solid rgba(255,255,255,0.2);
-            color: white;
-            width: 40px;
-            height: 40px;
-            border-radius: 8px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s;
+        .swiper-pagination-bullet {
+            background: white;
+            opacity: 0.5;
         }
 
-        .controls button:hover:not(:disabled) {
-            background: var(--primary);
-            border-color: var(--primary);
-            transform: scale(1.05);
+        .swiper-pagination-bullet-active {
+            background: #4f46e5;
+            opacity: 1;
         }
 
-        .controls button:disabled {
-            opacity: 0.3;
-            cursor: not-allowed;
+        /* Coverflow specific */
+        .swiper-coverflow .swiper-slide {
+            width: 60%;
         }
 
-        .controls button.active {
-            background: var(--primary);
-            border-color: var(--primary);
+        /* Cards specific */
+        .swiper-cards .swiper-slide {
+            width: 80%;
         }
 
-        .controls button svg {
-            width: 18px;
-            height: 18px;
+        /* Cube specific */
+        .swiper-cube {
+            overflow: visible;
         }
 
-        .page-indicator {
-            background: rgba(255,255,255,0.1);
-            border: 1px solid rgba(255,255,255,0.2);
-            border-radius: 8px;
-            padding: 8px 16px;
-            color: white;
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .page-indicator input {
-            background: transparent;
-            border: none;
-            color: white;
-            width: 35px;
-            text-align: center;
-            font-size: 14px;
-            outline: none;
-        }
-
-        .page-indicator input::-webkit-outer-spin-button,
-        .page-indicator input::-webkit-inner-spin-button {
-            -webkit-appearance: none;
-        }
-
-        .divider {
-            width: 1px;
-            height: 24px;
-            background: rgba(255,255,255,0.2);
-            margin: 0 8px;
-        }
-
-        .zoom-level {
-            color: rgba(255,255,255,0.6);
-            font-size: 12px;
-            min-width: 45px;
-            text-align: center;
-        }
-
-        /* Effect selector */
-        .effect-selector {
-            position: relative;
-        }
-
-        .effect-menu {
-            position: absolute;
-            bottom: 50px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0,0,0,0.9);
-            border: 1px solid rgba(255,255,255,0.2);
-            border-radius: 8px;
-            padding: 8px 0;
-            display: none;
-            min-width: 140px;
-        }
-
-        .effect-menu.show {
-            display: block;
-        }
-
-        .effect-menu button {
-            width: 100%;
-            background: transparent;
-            border: none;
-            color: white;
-            padding: 8px 16px;
-            text-align: left;
-            cursor: pointer;
-            font-size: 14px;
-        }
-
-        .effect-menu button:hover {
-            background: rgba(255,255,255,0.1);
-        }
-
-        .effect-menu button.active {
-            background: var(--primary);
-            color: white;
-        }
-
-        /* Loading */
+        /* ================================================================ */
+        /* LOADING & ERROR STATES                                          */
+        /* ================================================================ */
         #loading {
             position: fixed;
             inset: 0;
@@ -331,29 +300,29 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
             z-index: 1000;
         }
 
         .spinner {
             width: 50px;
             height: 50px;
-            border: 3px solid rgba(255,255,255,0.1);
-            border-top-color: var(--primary);
+            border: 3px solid #e2e8f0;
+            border-top-color: #4f46e5;
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
         }
 
         #loading p {
             margin-top: 16px;
-            color: rgba(255,255,255,0.6);
+            color: #64748b;
+            font-weight: 500;
         }
 
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
 
-        /* Error */
         #error {
             position: fixed;
             inset: 0;
@@ -361,143 +330,348 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
             text-align: center;
             padding: 20px;
         }
 
         #error.show { display: flex; }
-        #error svg { color: #ef4444; }
-        #error h2 { font-size: 24px; margin-top: 16px; }
-        #error p { color: rgba(255,255,255,0.6); margin-top: 8px; }
+        #error i { color: #ef4444; font-size: 64px; margin-bottom: 16px; }
+        #error h2 { font-size: 24px; color: #1e293b; margin-bottom: 8px; }
+        #error p { color: #64748b; margin-bottom: 24px; }
         #error a {
-            margin-top: 24px;
             padding: 12px 24px;
-            background: var(--primary);
+            background: #4f46e5;
             color: white;
             text-decoration: none;
             border-radius: 8px;
             font-weight: 500;
         }
 
-        /* Modal */
-        .modal {
+        /* ================================================================ */
+        /* CONTROL BAR                                                     */
+        /* ================================================================ */
+        .control-bar {
             position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.8);
-            display: none;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 50px;
+            padding: 10px 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 100;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
+        }
+
+        .control-btn {
+            width: 38px;
+            height: 38px;
+            border-radius: 8px;
+            border: none;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            cursor: pointer;
+            display: flex;
             align-items: center;
             justify-content: center;
-            z-index: 200;
-        }
-
-        .modal.show { display: flex; }
-
-        .modal-content {
-            background: #1e293b;
-            padding: 24px;
-            border-radius: 12px;
-            width: 90%;
-            max-width: 400px;
-        }
-
-        .modal-content h3 { margin-bottom: 16px; font-size: 18px; }
-
-        .modal-content input {
-            width: 100%;
-            padding: 12px;
-            border-radius: 8px;
-            border: 1px solid rgba(255,255,255,0.2);
-            background: rgba(255,255,255,0.1);
-            color: white;
-            font-size: 16px;
-            outline: none;
-        }
-
-        .modal-actions {
-            display: flex;
-            gap: 12px;
-            margin-top: 16px;
-            justify-content: flex-end;
-        }
-
-        .modal-actions button {
-            padding: 10px 20px;
-            border-radius: 8px;
-            cursor: pointer;
+            transition: all 0.2s;
             font-size: 14px;
         }
 
-        .modal-actions .cancel {
-            border: 1px solid rgba(255,255,255,0.2);
-            background: transparent;
-            color: white;
+        .control-btn:hover:not(:disabled) {
+            background: #4f46e5;
+            transform: scale(1.05);
         }
 
-        .modal-actions .save {
-            border: none;
-            background: var(--primary);
-            color: white;
+        .control-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
         }
 
-        /* Responsive */
-        @media (max-width: 950px) {
-            #turnFlipbook {
-                width: 95vw !important;
-                height: 60vh !important;
-            }
-            .swiper-container {
-                max-width: 95vw;
-            }
-            .header .title { display: none; }
+        .control-divider {
+            width: 1px;
+            height: 24px;
+            background: rgba(255, 255, 255, 0.2);
         }
 
-        .hidden { display: none !important; }
+        /* ================================================================ */
+        /* MODE DROPDOWN                                                   */
+        /* ================================================================ */
+        .mode-dropdown {
+            position: relative;
+        }
 
-        /* Bouton retour flottant */
-        .back-btn {
-            position: fixed;
-            top: 70px;
-            left: 20px;
-            width: 40px;
-            height: 40px;
-            background: rgba(0,0,0,0.4);
-            border: none;
-            border-radius: 50%;
+        .mode-dropdown-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 14px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
             color: white;
+            font-size: 13px;
             cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+
+        .mode-dropdown-btn:hover {
+            background: rgba(79, 70, 229, 0.5);
+            border-color: #4f46e5;
+        }
+
+        .mode-dropdown-btn i.mode-icon {
+            font-size: 14px;
+            width: 16px;
+            text-align: center;
+        }
+
+        .mode-dropdown-btn i.chevron {
+            font-size: 10px;
+            transition: transform 0.2s;
+        }
+
+        .mode-dropdown.open .mode-dropdown-btn i.chevron {
+            transform: rotate(180deg);
+        }
+
+        .mode-dropdown-menu {
+            position: absolute;
+            bottom: calc(100% + 10px);
+            left: 50%;
+            transform: translateX(-50%) scale(0.95);
+            background: rgba(15, 23, 42, 0.98);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            padding: 8px;
+            min-width: 180px;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s;
+            box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .mode-dropdown.open .mode-dropdown-menu {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(-50%) scale(1);
+        }
+
+        .mode-option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 13px;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.15s;
+        }
+
+        .mode-option:hover {
+            background: rgba(79, 70, 229, 0.3);
+            color: white;
+        }
+
+        .mode-option.active {
+            background: #4f46e5;
+            color: white;
+        }
+
+        .mode-option i {
+            width: 18px;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        .mode-option-label {
+            flex: 1;
+        }
+
+        .mode-option .check {
+            opacity: 0;
+            font-size: 12px;
+        }
+
+        .mode-option.active .check {
+            opacity: 1;
+        }
+
+        /* ================================================================ */
+        /* PROGRESS BAR                                                    */
+        /* ================================================================ */
+        .progress-container {
+            width: 120px;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #4f46e5, #6366f1);
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+
+        /* Zoom Display */
+        .zoom-display {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 11px;
+            min-width: 40px;
+            text-align: center;
+        }
+
+        /* ================================================================ */
+        /* WIDGETS                                                         */
+        /* ================================================================ */
+        .widgets-container {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .widget-overlay {
+            position: absolute;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            pointer-events: auto;
+        }
+
+        .widget-overlay.widget-link {
+            border: 2px solid transparent;
+            border-radius: 4px;
+        }
+
+        .widget-overlay.widget-link:hover {
+            border-color: rgba(79, 70, 229, 0.6);
+            background: rgba(79, 70, 229, 0.1);
+        }
+
+        .widget-overlay.widget-video,
+        .widget-overlay.widget-audio {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
-            z-index: 90;
-            transition: all 0.2s;
-            backdrop-filter: blur(10px);
         }
 
-        .back-btn:hover {
-            background: rgba(0,0,0,0.6);
-            transform: scale(1.1);
+        .widget-overlay.widget-video:hover,
+        .widget-overlay.widget-audio:hover {
+            background: rgba(0, 0, 0, 0.5);
         }
+
+        .widget-overlay .widget-icon {
+            color: white;
+            font-size: 24px;
+            opacity: 0.8;
+        }
+
+        .widget-overlay:hover .widget-icon {
+            opacity: 1;
+        }
+
+        .widget-overlay.widget-hotspot {
+            border: 2px dashed rgba(255, 193, 7, 0.6);
+            border-radius: 4px;
+        }
+
+        .widget-overlay.widget-hotspot:hover {
+            background: rgba(255, 193, 7, 0.2);
+        }
+
+        /* ================================================================ */
+        /* RESPONSIVE                                                      */
+        /* ================================================================ */
+        @media (max-width: 768px) {
+            .header-title { display: none; }
+
+            .control-bar {
+                flex-wrap: wrap;
+                max-width: calc(100vw - 32px);
+                padding: 8px 12px;
+                gap: 8px;
+            }
+
+            .control-btn {
+                width: 34px;
+                height: 34px;
+                font-size: 12px;
+            }
+
+            .control-divider { display: none; }
+
+            .mode-dropdown-btn {
+                padding: 6px 10px;
+                font-size: 12px;
+            }
+
+            .progress-container { width: 80px; }
+        }
+
+        @media (max-width: 480px) {
+            .control-bar {
+                bottom: 12px;
+                padding: 6px 10px;
+                gap: 6px;
+            }
+
+            .control-btn {
+                width: 32px;
+                height: 32px;
+            }
+
+            .zoom-display { display: none; }
+            .progress-container { width: 60px; }
+        }
+
+        /* ================================================================ */
+        /* FULLSCREEN                                                      */
+        /* ================================================================ */
+        body.fullscreen {
+            background: #000;
+        }
+
+        body.fullscreen .header {
+            background: rgba(0, 0, 0, 0.5);
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        body.fullscreen .control-bar {
+            background: rgba(0, 0, 0, 0.7);
+        }
+
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
+
     <!-- Header -->
     <header class="header">
-        <a href="/">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
-            </svg>
-            OpenFlip
-        </a>
-        <span class="title" id="docTitle"></span>
+        <div class="header-left">
+            <button class="back-btn" id="backBtn" title="Retour">
+                <i class="fa-solid fa-arrow-left"></i>
+            </button>
+            <a href="/" class="header-logo">
+                <div class="logo-icon">
+                    <i class="fa-solid fa-book-open"></i>
+                </div>
+                <span><span style="color: #4f46e5;">Open</span><span>Flip</span></span>
+            </a>
+        </div>
+        <div class="header-title" id="docTitle"></div>
     </header>
-
-    <!-- Bouton retour flottant -->
-    <button onclick="history.back()" class="back-btn">
-        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-        </svg>
-    </button>
 
     <!-- Loading -->
     <div id="loading">
@@ -505,513 +679,1167 @@
         <p>Chargement du flipbook...</p>
     </div>
 
-    <!-- Reader -->
-    <div id="reader" class="reader-container hidden">
-        <div class="viewer-wrapper" id="viewerWrapper">
-            <!-- Turn.js container -->
-            <div id="turnContainer" class="flipbook-container">
-                <div id="turnFlipbook"></div>
-                <div class="book-spine" id="bookSpine"></div>
-                <div class="book-shadow"></div>
-            </div>
+    <!-- Main Container -->
+    <div class="container" id="main-container">
+        <div id="reader-viewport"></div>
+    </div>
 
-            <!-- Swiper container -->
-            <div id="swiperContainer" class="swiper-container hidden">
-                <div class="swiper" id="swiperFlipbook">
-                    <div class="swiper-wrapper" id="swiperWrapper"></div>
-                    <div class="swiper-button-prev"></div>
-                    <div class="swiper-button-next"></div>
+    <!-- Control Bar -->
+    <div class="control-bar">
+        <!-- Mode Dropdown -->
+        <div class="mode-dropdown" id="modeDropdown">
+            <button class="mode-dropdown-btn" id="modeDropdownBtn">
+                <i class="fa-solid fa-book-open mode-icon" id="currentModeIcon"></i>
+                <span id="currentModeLabel">Standard</span>
+                <i class="fa-solid fa-chevron-up chevron"></i>
+            </button>
+            <div class="mode-dropdown-menu" id="modeDropdownMenu">
+                <div class="mode-option active" data-mode="standard">
+                    <i class="fa-solid fa-book-open"></i>
+                    <span class="mode-option-label">Standard</span>
+                    <i class="fa-solid fa-check check"></i>
+                </div>
+                <div class="mode-option" data-mode="coverflow">
+                    <i class="fa-solid fa-layer-group"></i>
+                    <span class="mode-option-label">Coverflow</span>
+                    <i class="fa-solid fa-check check"></i>
+                </div>
+                <div class="mode-option" data-mode="cards">
+                    <i class="fa-solid fa-clone"></i>
+                    <span class="mode-option-label">Cartes</span>
+                    <i class="fa-solid fa-check check"></i>
+                </div>
+                <div class="mode-option" data-mode="cube">
+                    <i class="fa-solid fa-cube"></i>
+                    <span class="mode-option-label">Cube</span>
+                    <i class="fa-solid fa-check check"></i>
+                </div>
+                <div class="mode-option" data-mode="fade">
+                    <i class="fa-solid fa-images"></i>
+                    <span class="mode-option-label">Slide / Fondu</span>
+                    <i class="fa-solid fa-check check"></i>
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- Controls -->
-    <div id="controls" class="controls hidden">
-        <button id="firstBtn" title="Première page (Home)">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"/>
-            </svg>
-        </button>
-        <button id="prevBtn" title="Page précédente (←)">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-            </svg>
-        </button>
-        
-        <div class="page-indicator">
-            <input type="number" id="pageInput" min="1" value="1">
-            <span>/</span>
-            <span id="totalPages">0</span>
+        <div class="control-divider"></div>
+
+        <div class="progress-container">
+            <div class="progress-bar" id="progressBar" style="width: 0%"></div>
         </div>
 
-        <button id="nextBtn" title="Page suivante (→)">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-            </svg>
+        <div class="control-divider"></div>
+
+        <button class="control-btn" id="zoomOutBtn" title="Zoom arrière (-)">
+            <i class="fa-solid fa-minus"></i>
         </button>
-        <button id="lastBtn" title="Dernière page (End)">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"/>
-            </svg>
+        <span class="zoom-display" id="zoomLevel">100%</span>
+        <button class="control-btn" id="zoomInBtn" title="Zoom avant (+)">
+            <i class="fa-solid fa-plus"></i>
         </button>
 
-        <div class="divider"></div>
+        <div class="control-divider"></div>
 
-        <!-- Effect selector -->
-        <div class="effect-selector">
-            <button id="effectBtn" title="Effet de transition">
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"/>
-                </svg>
-            </button>
-            <div class="effect-menu" id="effectMenu">
-                <button data-effect="flip" class="active">Flipbook</button>
-                <button data-effect="slide">Slide</button>
-                <button data-effect="fade">Fade</button>
-                <button data-effect="coverflow">Coverflow</button>
-                <button data-effect="cards">Cards</button>
-            </div>
-        </div>
-
-        <!-- Zoom -->
-        <button id="zoomOutBtn" title="Zoom arrière (-)">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM13 10H7"/>
-            </svg>
+        <button class="control-btn" id="soundBtn" title="Son (S)">
+            <i class="fa-solid fa-volume-high"></i>
         </button>
-        <button id="zoomInBtn" title="Zoom avant (+)">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3H7"/>
-            </svg>
-        </button>
-        <span class="zoom-level" id="zoomLevel">100%</span>
 
-        <div class="divider"></div>
+        <div class="control-divider"></div>
 
-        <button id="fullscreenBtn" title="Plein écran (F)">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/>
-            </svg>
+        <button class="control-btn" id="fullscreenBtn" title="Plein écran (F)">
+            <i class="fa-solid fa-expand"></i>
         </button>
     </div>
 
     <!-- Error -->
     <div id="error">
-        <svg width="64" height="64" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-        </svg>
+        <i class="fa-solid fa-circle-exclamation"></i>
         <h2>Document introuvable</h2>
         <p>Ce document n'existe pas ou a été supprimé.</p>
         <a href="/upload">Créer un flipbook</a>
     </div>
 
     <script>
-    $(document).ready(function() {
-        const docId = window.location.pathname.split('/').pop();
-        let totalPages = 0;
-        let currentEffect = 'flip'; // Défaut: flip (turn.js)
-        let currentPage = 1;
-        
-        // Viewers
-        let turnInstance = null;
-        let swiperInstance = null;
-        let turnInitialized = false;
-        let swiperInitialized = false;
-        
-        const zoomLevels = [0.5, 0.75, 1, 1.25, 1.5];
-        let zoomIndex = 2;
+    // ========================================================================
+    // READER MANAGER CLASS - Engine Swap Architecture
+    // ========================================================================
+    class ReaderManager {
+        constructor() {
+            this.engine = null;          // Current engine instance (PageFlip or Swiper)
+            this.engineType = null;      // 'pageflip' or 'swiper'
+            this.currentMode = 'standard';
+            this.currentPage = 0;
+            this.totalPages = 0;
+            this.docId = null;
+            this.pagesData = [];
+            this.imageWidth = 595;
+            this.imageHeight = 842;
 
-        const $loading = $('#loading');
-        const $reader = $('#reader');
-        const $controls = $('#controls');
-        const $error = $('#error');
-        const $turnContainer = $('#turnContainer');
-        const $swiperContainer = $('#swiperContainer');
-        const $turnFlipbook = $('#turnFlipbook');
-        const $swiperWrapper = $('#swiperWrapper');
-        const $viewerWrapper = $('#viewerWrapper');
-        const $docTitle = $('#docTitle');
-        const $pageInput = $('#pageInput');
-        const $totalPages = $('#totalPages');
-        const $zoomLevel = $('#zoomLevel');
+            // Zoom
+            this.zoomLevels = [0.5, 0.75, 1, 1.25, 1.5, 2];
+            this.zoomIndex = 2;
+            this.currentZoom = 1;
 
-        // Load document
-        async function loadDocument() {
+            // Audio - Multiple sound variants for variety
+            this.currentAudio = null;
+            this.flipSounds = [];  // Array of 4 pre-loaded sounds
+            this.isMuted = false;
+            this.audioContext = null;
+            this.audioInitialized = false;
+
+            // Mode configurations
+            this.modes = {
+                standard: { engine: 'pageflip', icon: 'fa-book-open', label: 'Standard' },
+                coverflow: { engine: 'swiper', effect: 'coverflow', icon: 'fa-layer-group', label: 'Coverflow' },
+                cards: { engine: 'swiper', effect: 'cards', icon: 'fa-clone', label: 'Cartes' },
+                cube: { engine: 'swiper', effect: 'cube', icon: 'fa-cube', label: 'Cube' },
+                fade: { engine: 'swiper', effect: 'fade', icon: 'fa-images', label: 'Slide / Fondu' }
+            };
+
+            // Swiper effect configurations
+            this.swiperEffects = {
+                coverflow: {
+                    effect: 'coverflow',
+                    grabCursor: true,
+                    centeredSlides: true,
+                    slidesPerView: 'auto',
+                    coverflowEffect: {
+                        rotate: 50,
+                        stretch: 0,
+                        depth: 100,
+                        modifier: 1,
+                        slideShadows: true
+                    }
+                },
+                cards: {
+                    effect: 'cards',
+                    grabCursor: true,
+                    cardsEffect: {
+                        slideShadows: true,
+                        perSlideOffset: 8,
+                        perSlideRotate: 2
+                    }
+                },
+                cube: {
+                    effect: 'cube',
+                    grabCursor: true,
+                    cubeEffect: {
+                        shadow: true,
+                        slideShadows: true,
+                        shadowOffset: 20,
+                        shadowScale: 0.94
+                    }
+                },
+                fade: {
+                    effect: 'fade',
+                    fadeEffect: {
+                        crossFade: true
+                    }
+                }
+            };
+        }
+
+        // ====================================================================
+        // INITIALIZATION
+        // ====================================================================
+        async init() {
             try {
-                const res = await fetch(`/api/documents/${docId}`);
-                if (!res.ok) throw new Error('Not found');
-                
-                const doc = await res.json();
-                totalPages = doc.pages;
-                $docTitle.text(doc.title);
-                $totalPages.text(totalPages);
-                $pageInput.attr('max', totalPages);
-                
+                // Get doc ID from URL (remove query params)
+                const pathParts = window.location.pathname.split('/').filter(p => p);
+                let docId = pathParts[pathParts.length - 1];
+                // Remove query parameters if present
+                docId = docId.split('?')[0];
+                this.docId = docId;
+
+                if (!this.docId) throw new Error('No document ID');
+
+                console.log(`Loading document: ${this.docId}`);
+
+                // Try to get preview data from localStorage first
+                let doc = null;
+                try {
+                    const previewKey = `preview_${this.docId}`;
+                    const storedData = localStorage.getItem(previewKey);
+                    if (storedData) {
+                        doc = JSON.parse(storedData);
+                        console.log('✓ Preview data loaded from localStorage');
+                        // Clean up localStorage
+                        localStorage.removeItem(previewKey);
+                    }
+                } catch (e) {
+                    console.warn('Failed to load preview data from localStorage:', e);
+                }
+
+                // If no preview data, fetch from API
+                if (!doc) {
+                    console.log('Fetching data from API...');
+                    const res = await fetch(`/api/reader/${this.docId}`);
+                    if (!res.ok) throw new Error(`Document not found (${res.status})`);
+                    doc = await res.json();
+                    console.log('✓ Data loaded from API');
+                }
+
+                this.totalPages = doc.page_count;
+                this.pagesData = doc.pages || [];
+                this.styleConfig = doc.style || {};
+                this.isPreviewMode = !!window.opener;
+
                 document.title = `${doc.title} - OpenFlip`;
+                document.getElementById('docTitle').textContent = doc.title;
+
+                // Get image dimensions from first page
+                await this.loadImageDimensions();
+
+                // Initialize with configured mode or standard
+                const initialMode = this.styleConfig.viewMode || 'standard';
                 
-                // Load saved effect
-                const savedEffect = localStorage.getItem(`flipbook_effect_${docId}`);
-                if (savedEffect && ['flip', 'slide', 'fade', 'coverflow', 'cards'].includes(savedEffect)) {
-                    currentEffect = savedEffect;
+                // Wait for turn.js to be ready if using pageflip mode
+                if (initialMode === 'standard') {
+                    await new Promise(resolve => {
+                        const checkTurn = () => {
+                            if (typeof $ !== 'undefined' && $.fn.turn) {
+                                resolve();
+                            } else {
+                                setTimeout(checkTurn, 100);
+                            }
+                        };
+                        checkTurn();
+                    });
                 }
                 
-                // Update menu UI
-                $('.effect-menu button').removeClass('active');
-                $(`.effect-menu button[data-effect="${currentEffect}"]`).addClass('active');
+                await this.setMode(initialMode);
+
+                // Show container
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('main-container').style.display = 'flex';
+
+                // Apply style configuration AFTER UI is built
+                this.applyStyleConfig();
+
+                // Setup event listeners
+                this.setupEventListeners();
                 
-                await initViewer();
-            } catch (err) {
-                $loading.addClass('hidden');
-                $error.addClass('show');
+                // Initialize audio
+                this.initAudio();
+                
+                this.updateUI();
+
+                console.log('ReaderManager initialized', { mode: initialMode, style: this.styleConfig, isPreviewMode: this.isPreviewMode });
+
+            } catch (error) {
+                console.error('Init error:', error);
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('error').classList.add('show');
             }
         }
 
-        // Initialize the appropriate viewer
-        async function initViewer() {
-            if (currentEffect === 'flip') {
-                await initTurnJs();
-                $turnContainer.removeClass('hidden');
-                $swiperContainer.addClass('hidden');
-                $('#bookSpine').show();
+        waitForPreviewData() {
+            return new Promise((resolve) => {
+                console.log('Waiting for preview data from parent window...');
+                const timeout = setTimeout(() => {
+                    console.log('Preview data timeout - using API fallback');
+                    window.removeEventListener('message', handleMessage);
+                    resolve(null);
+                }, 10000); // 10 second timeout
+
+                const handleMessage = (event) => {
+                    if (event.origin !== window.location.origin) {
+                        console.warn('Message from different origin:', event.origin);
+                        return;
+                    }
+
+                    console.log('Message received:', event.data?.type);
+                    if (event.data?.type === 'PREVIEW_DATA') {
+                        clearTimeout(timeout);
+                        window.removeEventListener('message', handleMessage);
+                        console.log('✓ Preview data received:', event.data.payload);
+                        resolve(event.data.payload);
+                    }
+                };
+
+                window.addEventListener('message', handleMessage);
+            });
+        }
+
+        applyStyleConfig() {
+            const style = this.styleConfig || {};
+            console.log('Applying style config:', style);
+            
+            const body = document.body;
+
+            // Apply background color
+            if (style.backgroundColor) {
+                console.log('Applying background color:', style.backgroundColor);
+                body.style.setProperty('background-color', style.backgroundColor, 'important');
             } else {
-                await initSwiper();
-                $turnContainer.addClass('hidden');
-                $swiperContainer.removeClass('hidden');
+                body.style.setProperty('background-color', '#0f172a', 'important');
+            }
+
+            // Apply background image using CSS variable (works with body::before)
+            if (style.backgroundImage) {
+                console.log('Applying background image:', style.backgroundImage);
+                // Store in CSS variable for body::before to use
+                document.documentElement.style.setProperty('--bg-image', `url(${style.backgroundImage})`);
+            } else {
+                document.documentElement.style.setProperty('--bg-image', 'none');
+            }
+
+            // Show/hide navigation controls
+            const navControls = document.querySelector('.nav-controls');
+            if (style.showNavigation === false && navControls) {
+                navControls.style.setProperty('display', 'none', 'important');
+            } else if (style.showNavigation !== false && navControls) {
+                navControls.style.setProperty('display', 'flex', 'important');
+            }
+
+            // Show/hide progress bar
+            const progressContainer = document.querySelector('.progress-container');
+            if (style.showProgressBar === false && progressContainer) {
+                progressContainer.style.setProperty('display', 'none', 'important');
+            } else if (style.showProgressBar !== false && progressContainer) {
+                progressContainer.style.setProperty('display', 'block', 'important');
+            }
+
+            // Show/hide zoom controls
+            const zoomControls = document.querySelectorAll('#zoomOutBtn, #zoomInBtn, .zoom-display');
+            if (style.allowZoom === false) {
+                zoomControls.forEach(el => el.style.setProperty('display', 'none', 'important'));
+            } else if (style.allowZoom !== false) {
+                zoomControls.forEach(el => el.style.setProperty('display', '', 'important'));
+            }
+
+            // Show/hide fullscreen button
+            const fullscreenBtn = document.getElementById('fullscreenBtn');
+            if (style.allowFullscreen === false && fullscreenBtn) {
+                fullscreenBtn.style.setProperty('display', 'none', 'important');
+            } else if (style.allowFullscreen !== false && fullscreenBtn) {
+                fullscreenBtn.style.setProperty('display', '', 'important');
+            }
+
+            // Add logo if configured
+            if (style.showLogo && style.logoUrl) {
+                console.log('Adding logo:', style.logoUrl);
+                this.addLogo(style.logoUrl);
             }
             
-            $loading.addClass('hidden');
-            $reader.removeClass('hidden');
-            $controls.removeClass('hidden');
-            
-            updateButtons();
+            console.log('✓ Style config applied');
         }
 
-        // Initialize Turn.js
-        async function initTurnJs() {
-            if (turnInitialized) {
-                $turnFlipbook.turn('page', currentPage);
+        addLogo(logoUrl) {
+            const existing = document.getElementById('reader-logo');
+            if (existing) existing.remove();
+
+            const logo = document.createElement('img');
+            logo.id = 'reader-logo';
+            logo.src = logoUrl;
+            logo.alt = 'Logo';
+            logo.style.cssText = 'position:fixed;top:80px;left:24px;height:40px;width:auto;z-index:50;object-fit:contain;';
+            document.body.appendChild(logo);
+        }
+
+        async loadImageDimensions() {
+            // Use page dimensions from data if available (more reliable)
+            if (this.pagesData[0]?.width && this.pagesData[0]?.height) {
+                this.imageWidth = this.pagesData[0].width;
+                this.imageHeight = this.pagesData[0].height;
+                console.log('Using page dimensions from data:', this.imageWidth, 'x', this.imageHeight);
+                this.setContainerDimensions();
                 return;
             }
-            
-            // Add pages
-            for (let i = 1; i <= totalPages; i++) {
-                const $page = $('<div>', { class: 'page' });
-                const $img = $('<img>', {
-                    src: `/pages/${docId}/page_${i}.webp`,
-                    alt: `Page ${i}`,
-                    loading: i <= 4 ? 'eager' : 'lazy'
-                });
-                $page.append($img);
-                $turnFlipbook.append($page);
-            }
 
-            // Wait for first images
-            await Promise.all(
-                $turnFlipbook.find('img').slice(0, 2).map(function() {
-                    return new Promise(resolve => {
-                        if (this.complete) resolve();
-                        else {
-                            this.onload = resolve;
-                            this.onerror = resolve;
-                        }
-                    });
-                }).get()
-            );
-
-            // Initialize turn.js
-            $turnFlipbook.turn({
-                width: 900,
-                height: 600,
-                autoCenter: true,
-                display: 'double',
-                acceleration: true,
-                gradients: true,
-                elevation: 50,
-                duration: 1000,
-                when: {
-                    turning: function(event, page) {
-                        currentPage = page;
-                        updatePageIndicator();
-                    },
-                    turned: function(event, page) {
-                        currentPage = page;
-                        updatePageIndicator();
-                        updateButtons();
-                    }
-                }
+            // Fallback: load from image
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.onload = () => {
+                    this.imageWidth = img.naturalWidth;
+                    this.imageHeight = img.naturalHeight;
+                    console.log('Using image dimensions:', this.imageWidth, 'x', this.imageHeight);
+                    this.setContainerDimensions();
+                    resolve();
+                };
+                img.onerror = () => {
+                    console.warn('Failed to load image dimensions, using defaults');
+                    this.setContainerDimensions();
+                    resolve();
+                };
+                img.src = this.pagesData[0].image_url || `/pages/${this.docId}/page_1.webp`;
+                setTimeout(() => {
+                    this.setContainerDimensions();
+                    resolve();
+                }, 5000); // Timeout
             });
-            
-            turnInitialized = true;
         }
 
-        // Initialize Swiper
-        async function initSwiper() {
-            if (swiperInitialized) {
-                // Just update effect and go to page
-                if (swiperInstance) {
-                    swiperInstance.destroy(true, true);
-                }
+        setContainerDimensions() {
+            // Calculate aspect ratio
+            const aspectRatio = this.imageWidth / this.imageHeight;
+            
+            // Get available space (excluding header and padding)
+            const availableHeight = window.innerHeight - 64 - 80; // header + padding
+            const availableWidth = window.innerWidth - 40; // horizontal padding
+            
+            // Calculate max dimensions that fit in viewport
+            let containerWidth = availableWidth;
+            let containerHeight = containerWidth / aspectRatio;
+            
+            if (containerHeight > availableHeight) {
+                containerHeight = availableHeight;
+                containerWidth = containerHeight * aspectRatio;
+            }
+            
+            // Apply dimensions to main container
+            const container = document.querySelector('.container');
+            if (container) {
+                container.style.setProperty('max-width', containerWidth + 'px', 'important');
+                container.style.setProperty('width', containerWidth + 'px', 'important');
+                container.style.setProperty('height', containerHeight + 'px', 'important');
+            }
+            
+            // Apply to turn-container
+            const turnContainer = document.querySelector('.turn-container');
+            if (turnContainer) {
+                turnContainer.style.setProperty('width', containerWidth + 'px', 'important');
+                turnContainer.style.setProperty('height', containerHeight + 'px', 'important');
+            }
+            
+            // Apply to swiper-container
+            const swiperContainer = document.querySelector('.swiper-container');
+            if (swiperContainer) {
+                swiperContainer.style.setProperty('width', containerWidth + 'px', 'important');
+                swiperContainer.style.setProperty('height', containerHeight + 'px', 'important');
+            }
+            
+            console.log(`✓ Container dimensions set: ${Math.round(containerWidth)}x${Math.round(containerHeight)}px`);
+        }
+
+        // ====================================================================
+        // MODE SWITCHING (Engine Swap)
+        // ====================================================================
+        async setMode(modeName) {
+            const modeConfig = this.modes[modeName];
+            if (!modeConfig) return;
+
+            // Save current page
+            const savedPage = this.currentPage;
+
+            // Destroy current engine
+            this.destroyEngine();
+
+            // Clear viewport
+            const viewport = document.getElementById('reader-viewport');
+            viewport.innerHTML = '';
+
+            // Update mode
+            this.currentMode = modeName;
+            this.engineType = modeConfig.engine;
+
+            // Build new engine
+            if (modeConfig.engine === 'pageflip') {
+                await this.buildPageFlip(viewport);
             } else {
-                // Add slides
-                for (let i = 1; i <= totalPages; i++) {
-                    const slide = document.createElement('div');
-                    slide.className = 'swiper-slide';
-                    slide.innerHTML = `<img src="/pages/${docId}/page_${i}.webp" alt="Page ${i}" loading="${i <= 3 ? 'eager' : 'lazy'}">`;
-                    $swiperWrapper[0].appendChild(slide);
-                }
-                swiperInitialized = true;
+                await this.buildSwiper(viewport, modeConfig.effect);
             }
 
-            // Initialize Swiper with current effect
-            swiperInstance = new Swiper('#swiperFlipbook', {
-                effect: currentEffect,
-                grabCursor: true,
-                centeredSlides: true,
-                slidesPerView: currentEffect === 'coverflow' ? 'auto' : 1,
-                initialSlide: currentPage - 1,
-                speed: 600,
+            // Restore page
+            this.goToPage(savedPage);
+
+            // Update dropdown UI
+            this.updateModeDropdown();
+            this.updateUI();
+
+            console.log(`Mode changed to: ${modeName}`);
+        }
+
+        destroyEngine() {
+            if (!this.engine) return;
+
+            try {
+                if (this.engineType === 'pageflip') {
+                    this.engine.destroy();
+                } else if (this.engineType === 'swiper') {
+                    this.engine.destroy(true, true);
+                }
+            } catch (e) {
+                console.warn('Engine destroy error:', e);
+            }
+
+            this.engine = null;
+        }
+
+        // ====================================================================
+        // PAGEFLIP ENGINE
+        // ====================================================================
+        async buildPageFlip(container) {
+            console.log('Building PageFlip with turn.js...');
+            console.log('jQuery available:', typeof $ !== 'undefined');
+            console.log('Turn available:', typeof $(document).turn !== 'undefined');
+            
+            // Create structure
+            const wrapper = document.createElement('div');
+            wrapper.className = 'turn-container';
+            wrapper.id = 'turn-wrapper';
+
+            const book = document.createElement('div');
+            book.id = 'book';
+
+            // Create pages for turn.js
+            for (let i = 0; i < this.totalPages; i++) {
+                const pageData = this.pagesData[i] || {};
+                const pageNum = i + 1;
+
+                const page = document.createElement('div');
+                page.className = 'my-page';
+
+                // Create page content with image
+                const pageContent = document.createElement('div');
+                pageContent.style.cssText = 'position: relative; width: 100%; height: 100%;';
+
+                const img = document.createElement('img');
+                img.src = pageData.image_url || `/pages/${this.docId}/page_${pageNum}.webp`;
+                img.alt = `Page ${pageNum}`;
+                img.style.cssText = 'width: 100%; height: 100%; object-fit: contain;';
+                img.draggable = false;
+                pageContent.appendChild(img);
+
+                // Add widgets
+                const widgetsContainer = this.createWidgetsContainer(pageData);
+                pageContent.appendChild(widgetsContainer);
+
+                page.appendChild(pageContent);
+                book.appendChild(page);
+            }
+
+            wrapper.appendChild(book);
+            container.appendChild(wrapper);
+
+            // Initialize turn.js with error handling
+            try {
+                console.log('Initializing turn.js...');
+                $(book).turn({
+                    width: this.imageWidth,
+                    height: this.imageHeight,
+                    autoCenter: true,
+                    acceleration: true,
+                    gradients: true,
+                    elevation: 50,
+                    duration: 600,  // Animation duration in ms (smooth but not slow)
+                    when: {
+                        turned: (e, page) => {
+                            this.currentPage = page - 1;
+                            this.playPageFlipSound();
+                            this.updateUI();
+                        }
+                    }
+                });
+
+                this.engine = $(book).data('turn');
+                console.log('✓ turn.js initialized successfully');
+            } catch (error) {
+                console.error('turn.js initialization error:', error);
+                throw error;
+            }
+
+            // Apply container dimensions
+            this.setContainerDimensions();
+        }
+
+        // ====================================================================
+        // SWIPER ENGINE
+        // ====================================================================
+        async buildSwiper(container, effect) {
+            // Create structure
+            const swiperContainer = document.createElement('div');
+            swiperContainer.className = 'swiper-container';
+
+            const swiper = document.createElement('div');
+            swiper.className = 'swiper';
+            swiper.id = 'swiper';
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'swiper-wrapper';
+
+            // Create slides
+            for (let i = 0; i < this.totalPages; i++) {
+                const pageData = this.pagesData[i] || {};
+                const pageNum = i + 1;
+
+                const slide = document.createElement('div');
+                slide.className = 'swiper-slide';
+
+                const content = document.createElement('div');
+                content.className = 'page-content';
+
+                const img = document.createElement('img');
+                img.src = pageData.image_url || `/pages/${this.docId}/page_${pageNum}.webp`;
+                img.alt = `Page ${pageNum}`;
+                img.loading = pageNum <= 3 ? 'eager' : 'lazy';
+                img.draggable = false;
+                content.appendChild(img);
+
+                // Add widgets
+                const widgetsContainer = this.createWidgetsContainer(pageData);
+                content.appendChild(widgetsContainer);
+
+                slide.appendChild(content);
+                wrapper.appendChild(slide);
+            }
+
+            swiper.appendChild(wrapper);
+
+            // Add navigation elements
+            const pagination = document.createElement('div');
+            pagination.className = 'swiper-pagination';
+            swiper.appendChild(pagination);
+
+            const prevBtn = document.createElement('div');
+            prevBtn.className = 'swiper-button-prev';
+            swiper.appendChild(prevBtn);
+
+            const nextBtn = document.createElement('div');
+            nextBtn.className = 'swiper-button-next';
+            swiper.appendChild(nextBtn);
+
+            swiperContainer.appendChild(swiper);
+            container.appendChild(swiperContainer);
+
+            // Get effect config
+            const effectConfig = this.swiperEffects[effect] || {};
+
+            // Base Swiper config
+            const swiperConfig = {
+                ...effectConfig,
+                speed: 800,
                 keyboard: { enabled: true },
+                pagination: {
+                    el: '.swiper-pagination',
+                    clickable: true,
+                    dynamicBullets: true
+                },
                 navigation: {
                     nextEl: '.swiper-button-next',
-                    prevEl: '.swiper-button-prev',
-                },
-                fadeEffect: { crossFade: true },
-                coverflowEffect: {
-                    rotate: 30,
-                    slideShadows: true,
-                    depth: 100,
-                    stretch: 0,
-                },
-                cardsEffect: {
-                    slideShadows: true,
-                    perSlideOffset: 8,
-                    perSlideRotate: 2,
+                    prevEl: '.swiper-button-prev'
                 },
                 on: {
-                    slideChange: function() {
-                        currentPage = this.activeIndex + 1;
-                        updatePageIndicator();
-                        updateButtons();
+                    slideChange: () => {
+                        this.currentPage = this.engine.activeIndex;
+                        this.updateUI();
                     }
+                }
+            };
+
+            // Special handling for certain effects
+            if (effect === 'coverflow') {
+                swiperConfig.slidesPerView = 'auto';
+                swiperConfig.centeredSlides = true;
+            } else if (effect === 'cards' || effect === 'cube') {
+                swiperConfig.slidesPerView = 1;
+                swiperConfig.centeredSlides = true;
+            } else if (effect === 'fade') {
+                swiperConfig.slidesPerView = 1;
+            }
+
+            // Initialize Swiper
+            this.engine = new Swiper('#swiper', swiperConfig);
+            
+            // Apply container dimensions
+            this.setContainerDimensions();
+        }
+
+        // ====================================================================
+        // WIDGETS
+        // ====================================================================
+        createWidgetsContainer(pageData) {
+            const container = document.createElement('div');
+            container.className = 'widgets-container';
+
+            if (!pageData.widgets || pageData.widgets.length === 0) {
+                return container;
+            }
+
+            pageData.widgets.forEach(widget => {
+                const el = this.createWidgetElement(widget, pageData.width, pageData.height);
+                if (el) container.appendChild(el);
+            });
+
+            return container;
+        }
+
+        createWidgetElement(widget, pageWidth, pageHeight) {
+            const geo = widget.geometry || {};
+            const props = widget.props || {};
+
+            if (!geo.x && !geo.y && !geo.width && !geo.height) return null;
+
+            const el = document.createElement('div');
+            el.className = `widget-overlay widget-${widget.type}`;
+
+            const left = (geo.x / pageWidth * 100) || 0;
+            const top = (geo.y / pageHeight * 100) || 0;
+            const width = (geo.width / pageWidth * 100) || 10;
+            const height = (geo.height / pageHeight * 100) || 10;
+
+            el.style.cssText = `
+                left: ${left}%;
+                top: ${top}%;
+                width: ${width}%;
+                height: ${height}%;
+                z-index: ${widget.z_index || 1};
+            `;
+
+            switch (widget.type) {
+                case 'link':
+                    el.title = props.title || props.url || 'Lien';
+                    el.onclick = (e) => {
+                        e.stopPropagation();
+                        if (props.url) window.open(props.url, props.target || '_blank');
+                    };
+                    break;
+                case 'video':
+                    el.innerHTML = '<i class="fa-solid fa-play widget-icon"></i>';
+                    el.title = 'Voir la vidéo';
+                    el.onclick = (e) => {
+                        e.stopPropagation();
+                        if (props.url) this.openVideoModal(props.url);
+                    };
+                    break;
+                case 'audio':
+                    el.innerHTML = '<i class="fa-solid fa-volume-high widget-icon"></i>';
+                    el.title = 'Écouter';
+                    el.onclick = (e) => {
+                        e.stopPropagation();
+                        if (props.url) this.playAudio(props.url);
+                    };
+                    break;
+                case 'hotspot':
+                    el.title = props.title || 'Zone interactive';
+                    if (props.url) {
+                        el.onclick = (e) => {
+                            e.stopPropagation();
+                            window.open(props.url, props.target || '_blank');
+                        };
+                    }
+                    break;
+            }
+
+            return el;
+        }
+
+        // ====================================================================
+        // NAVIGATION
+        // ====================================================================
+        goToPage(index) {
+            if (index < 0 || index >= this.totalPages) return;
+
+            this.currentPage = index;
+
+            if (this.engineType === 'pageflip' && this.engine) {
+                // turn.js uses 1-based page numbers
+                const book = $('#book');
+                book.turn('page', index + 1);
+            } else if (this.engineType === 'swiper' && this.engine) {
+                this.engine.slideTo(index, 0);
+            }
+
+            this.updateUI();
+        }
+
+        nextPage() {
+            if (this.currentPage >= this.totalPages - 1) return;
+
+            if (this.engineType === 'pageflip' && this.engine) {
+                const book = $('#book');
+                const currentPage = book.turn('page');
+                if (currentPage < this.totalPages) {
+                    book.turn('page', currentPage + 1);
+                    this.playPageFlipSound();
+                }
+            } else if (this.engineType === 'swiper' && this.engine) {
+                this.engine.slideNext();
+            }
+        }
+
+        prevPage() {
+            if (this.currentPage <= 0) return;
+
+            if (this.engineType === 'pageflip' && this.engine) {
+                const book = $('#book');
+                const currentPage = book.turn('page');
+                if (currentPage > 1) {
+                    book.turn('page', currentPage - 1);
+                    this.playPageFlipSound();
+                }
+            } else if (this.engineType === 'swiper' && this.engine) {
+                this.engine.slidePrev();
+            }
+        }
+
+        // ====================================================================
+        // ZOOM
+        // ====================================================================
+        zoomIn() {
+            if (this.zoomIndex < this.zoomLevels.length - 1) {
+                this.zoomIndex++;
+                this.applyZoom();
+            }
+        }
+
+        zoomOut() {
+            if (this.zoomIndex > 0) {
+                this.zoomIndex--;
+                this.applyZoom();
+            }
+        }
+
+        resetZoom() {
+            this.zoomIndex = 2;
+            this.applyZoom();
+        }
+
+        applyZoom() {
+            this.currentZoom = this.zoomLevels[this.zoomIndex];
+            const viewport = document.getElementById('reader-viewport');
+            viewport.style.transform = `scale(${this.currentZoom})`;
+            viewport.style.transformOrigin = 'center center';
+
+            document.getElementById('zoomLevel').textContent = Math.round(this.currentZoom * 100) + '%';
+            document.getElementById('zoomOutBtn').disabled = this.zoomIndex <= 0;
+            document.getElementById('zoomInBtn').disabled = this.zoomIndex >= this.zoomLevels.length - 1;
+        }
+
+        // ====================================================================
+        // UI UPDATES
+        // ====================================================================
+        updateUI() {
+            const percentage = Math.round(((this.currentPage + 1) / this.totalPages) * 100);
+            document.getElementById('progressBar').style.width = percentage + '%';
+        }
+
+        updateModeDropdown() {
+            const modeConfig = this.modes[this.currentMode];
+
+            // Update button
+            document.getElementById('currentModeIcon').className = `fa-solid ${modeConfig.icon} mode-icon`;
+            document.getElementById('currentModeLabel').textContent = modeConfig.label;
+
+            // Update options
+            document.querySelectorAll('.mode-option').forEach(opt => {
+                opt.classList.toggle('active', opt.dataset.mode === this.currentMode);
+            });
+        }
+
+        // ====================================================================
+        // EVENT LISTENERS
+        // ====================================================================
+        setupEventListeners() {
+            // Mode dropdown
+            const dropdown = document.getElementById('modeDropdown');
+            const dropdownBtn = document.getElementById('modeDropdownBtn');
+
+            dropdownBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                dropdown.classList.toggle('open');
+            });
+
+            document.addEventListener('click', () => {
+                dropdown.classList.remove('open');
+            });
+
+            document.querySelectorAll('.mode-option').forEach(opt => {
+                opt.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const mode = opt.dataset.mode;
+                    this.setMode(mode);
+                    dropdown.classList.remove('open');
+                });
+            });
+
+            // Back Button
+            const backBtn = document.getElementById('backBtn');
+            if (backBtn) {
+                backBtn.addEventListener('click', () => this.goBack());
+            }
+
+            // Sound
+            const soundBtn = document.getElementById('soundBtn');
+            if (soundBtn) {
+                soundBtn.addEventListener('click', () => this.toggleMute());
+            }
+
+            // Zoom
+            document.getElementById('zoomInBtn').addEventListener('click', () => this.zoomIn());
+            document.getElementById('zoomOutBtn').addEventListener('click', () => this.zoomOut());
+
+            // Fullscreen
+            document.getElementById('fullscreenBtn').addEventListener('click', () => this.toggleFullscreen());
+            document.addEventListener('fullscreenchange', () => this.handleFullscreenChange());
+
+            // Navigation buttons - play sound on click
+            const prevBtn = document.querySelector('.swiper-button-prev, [data-action="prev"]');
+            const nextBtn = document.querySelector('.swiper-button-next, [data-action="next"]');
+            
+            if (prevBtn) {
+                prevBtn.addEventListener('click', () => this.playPageFlipSound());
+            }
+            if (nextBtn) {
+                nextBtn.addEventListener('click', () => this.playPageFlipSound());
+            }
+
+            // Keyboard
+            document.addEventListener('keydown', (e) => this.handleKeyboard(e));
+
+            // Resize
+            window.addEventListener('resize', () => {
+                if (this.engineType === 'pageflip' && this.engine) {
+                    this.engine.updateState();
                 }
             });
         }
 
-        // Change effect
-        function changeEffect(effectName) {
-            if (currentEffect === effectName) return;
-            
-            // Save current page
-            if (currentEffect === 'flip' && turnInitialized) {
-                currentPage = $turnFlipbook.turn('page');
-            } else if (swiperInstance) {
-                currentPage = swiperInstance.activeIndex + 1;
-            }
-            
-            currentEffect = effectName;
-            localStorage.setItem(`flipbook_effect_${docId}`, effectName);
-            
-            // Update menu UI
-            $('.effect-menu button').removeClass('active');
-            $(`.effect-menu button[data-effect="${effectName}"]`).addClass('active');
-            $('#effectMenu').removeClass('show');
-            
-            // Switch viewer
-            if (effectName === 'flip') {
-                $swiperContainer.addClass('hidden');
-                $turnContainer.removeClass('hidden');
-                $('#bookSpine').show();
-                if (turnInitialized) {
-                    $turnFlipbook.turn('page', currentPage);
-                }
-            } else {
-                $turnContainer.addClass('hidden');
-                $swiperContainer.removeClass('hidden');
-                initSwiper();
-            }
-            
-            updateButtons();
-        }
+        handleKeyboard(e) {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
 
-        // Update page indicator
-        function updatePageIndicator() {
-            $pageInput.val(currentPage);
-        }
-
-        // Update button states
-        function updateButtons() {
-            $('#firstBtn, #prevBtn').prop('disabled', currentPage <= 1);
-            $('#lastBtn, #nextBtn').prop('disabled', currentPage >= totalPages);
-        }
-
-        // Navigation
-        function goToPage(page) {
-            if (page < 1 || page > totalPages) return;
-            currentPage = page;
-            
-            if (currentEffect === 'flip' && turnInitialized) {
-                $turnFlipbook.turn('page', page);
-            } else if (swiperInstance) {
-                swiperInstance.slideTo(page - 1);
-            }
-            
-            updatePageIndicator();
-            updateButtons();
-        }
-
-        function prevPage() {
-            if (currentEffect === 'flip' && turnInitialized) {
-                $turnFlipbook.turn('previous');
-            } else if (swiperInstance) {
-                swiperInstance.slidePrev();
-            }
-        }
-
-        function nextPage() {
-            if (currentEffect === 'flip' && turnInitialized) {
-                $turnFlipbook.turn('next');
-            } else if (swiperInstance) {
-                swiperInstance.slideNext();
-            }
-        }
-
-        // Event listeners
-        $('#firstBtn').on('click', () => goToPage(1));
-        $('#prevBtn').on('click', prevPage);
-        $('#nextBtn').on('click', nextPage);
-        $('#lastBtn').on('click', () => goToPage(totalPages));
-
-        $pageInput.on('change', function() {
-            const page = parseInt($(this).val());
-            if (page >= 1 && page <= totalPages) {
-                goToPage(page);
-            } else {
-                $(this).val(currentPage);
-            }
-        });
-
-        // Effect menu
-        $('#effectBtn').on('click', function(e) {
-            e.stopPropagation();
-            $('#effectMenu').toggleClass('show');
-        });
-
-        $('.effect-menu button').on('click', function() {
-            changeEffect($(this).data('effect'));
-        });
-
-        $(document).on('click', function(e) {
-            if (!$(e.target).closest('.effect-selector').length) {
-                $('#effectMenu').removeClass('show');
-            }
-        });
-
-        // Zoom
-        function applyZoom() {
-            const zoom = zoomLevels[zoomIndex];
-            $viewerWrapper.css('transform', `scale(${zoom})`);
-            $zoomLevel.text(Math.round(zoom * 100) + '%');
-        }
-
-        $('#zoomInBtn').on('click', function() {
-            if (zoomIndex < zoomLevels.length - 1) {
-                zoomIndex++;
-                applyZoom();
-            }
-        });
-
-        $('#zoomOutBtn').on('click', function() {
-            if (zoomIndex > 0) {
-                zoomIndex--;
-                applyZoom();
-            }
-        });
-
-        // Fullscreen
-        let fullscreenZoomIndex = null;
-        
-        $('#fullscreenBtn').on('click', function() {
-            if (document.fullscreenElement) {
-                document.exitFullscreen();
-            } else {
-                document.documentElement.requestFullscreen();
-            }
-        });
-
-        document.addEventListener('fullscreenchange', function() {
-            if (document.fullscreenElement) {
-                // Entrer en plein écran: sauvegarder le zoom actuel et agrandir
-                fullscreenZoomIndex = zoomIndex;
-                // Calculer le zoom optimal pour remplir l'écran
-                const viewportHeight = window.innerHeight - 150; // Moins les contrôles
-                const viewportWidth = window.innerWidth - 100;
-                const bookHeight = currentEffect === 'flip' ? 600 : 500;
-                const bookWidth = currentEffect === 'flip' ? 900 : 400;
-                const scaleH = viewportHeight / bookHeight;
-                const scaleW = viewportWidth / bookWidth;
-                const optimalScale = Math.min(scaleH, scaleW, 1.5); // Max 150%
-                
-                // Trouver le niveau de zoom le plus proche
-                let bestIndex = zoomIndex;
-                let minDiff = Infinity;
-                zoomLevels.forEach((level, i) => {
-                    const diff = Math.abs(level - optimalScale);
-                    if (diff < minDiff) {
-                        minDiff = diff;
-                        bestIndex = i;
-                    }
-                });
-                zoomIndex = bestIndex;
-                applyZoom();
-            } else {
-                // Sortir du plein écran: restaurer le zoom précédent
-                if (fullscreenZoomIndex !== null) {
-                    zoomIndex = fullscreenZoomIndex;
-                    fullscreenZoomIndex = null;
-                    applyZoom();
-                }
-            }
-        });
-
-        // Keyboard shortcuts
-        $(document).on('keydown', function(e) {
-            if (e.target.tagName === 'INPUT') return;
-            
-            switch(e.key) {
+            switch (e.key) {
                 case 'ArrowLeft':
                 case 'ArrowUp':
-                    prevPage();
+                    e.preventDefault();
+                    this.prevPage();
                     break;
                 case 'ArrowRight':
                 case 'ArrowDown':
                 case ' ':
                     e.preventDefault();
-                    nextPage();
+                    this.nextPage();
                     break;
                 case 'Home':
-                    goToPage(1);
+                    e.preventDefault();
+                    this.goToPage(0);
                     break;
                 case 'End':
-                    goToPage(totalPages);
+                    e.preventDefault();
+                    this.goToPage(this.totalPages - 1);
                     break;
                 case '+':
                 case '=':
-                    $('#zoomInBtn').click();
+                    e.preventDefault();
+                    this.zoomIn();
                     break;
                 case '-':
-                    $('#zoomOutBtn').click();
+                    e.preventDefault();
+                    this.zoomOut();
+                    break;
+                case '0':
+                    e.preventDefault();
+                    this.resetZoom();
                     break;
                 case 'f':
                 case 'F':
-                    $('#fullscreenBtn').click();
+                    e.preventDefault();
+                    this.toggleFullscreen();
+                    break;
+                case 's':
+                case 'S':
+                    e.preventDefault();
+                    this.toggleMute();
                     break;
             }
-        });
+        }
 
-        // Start
-        loadDocument();
-    });
+        toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(console.error);
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        goBack() {
+            // If opened from editor (preview mode), just close the window
+            if (this.isPreviewMode && window.opener) {
+                window.close();
+                return;
+            }
+
+            // Otherwise use history or go to gallery
+            if (history.length > 1) {
+                history.back();
+            } else {
+                window.location.href = '/gallery';
+            }
+        }
+
+        // ====================================================================
+        // AUDIO - PAGE FLIP SOUND EFFECTS (4 Variants for Variety)
+        // ====================================================================
+        initAudio() {
+            try {
+                this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                this.audioInitialized = true;
+                console.log('Audio context initialized');
+            } catch (e) {
+                console.warn('Web Audio API not supported', e);
+                this.audioInitialized = false;
+            }
+        }
+
+        playPageFlipSound() {
+            if (!this.audioInitialized || this.isMuted || !this.audioContext) return;
+
+            try {
+                const ctx = this.audioContext;
+                const now = ctx.currentTime;
+                const duration = 0.4; // 400ms
+
+                // Pick a random variant (changes frequency slightly each time)
+                const variants = [
+                    { freq1: 4000, freq2: 3200, noiseMul: 0.6 },
+                    { freq1: 3800, freq2: 3000, noiseMul: 0.65 },
+                    { freq1: 4200, freq2: 3400, noiseMul: 0.55 },
+                    { freq1: 3900, freq2: 3100, noiseMul: 0.7 }
+                ];
+                const variant = variants[Math.floor(Math.random() * variants.length)];
+
+                // Create nodes
+                const osc1 = ctx.createOscillator();
+                const osc2 = ctx.createOscillator();
+                const noise = ctx.createBufferSource();
+                
+                // Create noise buffer
+                const bufferSize = ctx.sampleRate * duration;
+                const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+                const data = noiseBuffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    data[i] = (Math.random() * 2 - 1) * variant.noiseMul;
+                }
+                noise.buffer = noiseBuffer;
+
+                // Gain nodes - increased levels for better audibility
+                const masterGain = ctx.createGain();
+                const gainOsc1 = ctx.createGain();
+                const gainOsc2 = ctx.createGain();
+                const gainNoise = ctx.createGain();
+
+                // Envelope (slower decay for longer presence)
+                gainOsc1.gain.setValueAtTime(0.25, now);
+                gainOsc1.gain.exponentialRampToValueAtTime(0.01, now + duration);
+                
+                gainOsc2.gain.setValueAtTime(0.25, now);
+                gainOsc2.gain.exponentialRampToValueAtTime(0.01, now + duration);
+                
+                gainNoise.gain.setValueAtTime(0.3, now);
+                gainNoise.gain.exponentialRampToValueAtTime(0.01, now + duration);
+
+                // Master volume at 100%
+                masterGain.gain.setValueAtTime(1.0, now);
+
+                // High-pass filter for crispy paper sound
+                const filter = ctx.createBiquadFilter();
+                filter.type = 'highpass';
+                filter.frequency.setValueAtTime(1500, now);
+                filter.Q.setValueAtTime(1.5, now);
+
+                // Connect graph: oscillators/noise -> gains -> filter -> master -> destination
+                osc1.connect(gainOsc1);
+                osc2.connect(gainOsc2);
+                noise.connect(gainNoise);
+
+                gainOsc1.connect(filter);
+                gainOsc2.connect(filter);
+                gainNoise.connect(filter);
+
+                filter.connect(masterGain);
+                masterGain.connect(ctx.destination);
+
+                // Set frequencies (will sweep down during duration)
+                osc1.frequency.setValueAtTime(variant.freq1, now);
+                osc1.frequency.exponentialRampToValueAtTime(2000, now + duration);
+
+                osc2.frequency.setValueAtTime(variant.freq2, now);
+                osc2.frequency.exponentialRampToValueAtTime(1600, now + duration);
+
+                // Play
+                osc1.start(now);
+                osc2.start(now);
+                noise.start(now);
+
+                // Stop
+                osc1.stop(now + duration);
+                osc2.stop(now + duration);
+                noise.stop(now + duration);
+
+                console.log('Page flip sound played ✓');
+
+            } catch (error) {
+                console.error('Page flip sound error:', error);
+            }
+        }
+
+        toggleMute() {
+            this.isMuted = !this.isMuted;
+            const soundBtn = document.getElementById('soundBtn');
+            const icon = soundBtn.querySelector('i');
+
+            if (this.isMuted) {
+                icon.className = 'fa-solid fa-volume-xmark';
+                soundBtn.style.opacity = '0.5';
+            } else {
+                icon.className = 'fa-solid fa-volume-high';
+                soundBtn.style.opacity = '1';
+            }
+        }
+
+        handleFullscreenChange() {
+            const isFullscreen = !!document.fullscreenElement;
+            document.body.classList.toggle('fullscreen', isFullscreen);
+
+            const icon = document.querySelector('#fullscreenBtn i');
+            icon.className = isFullscreen ? 'fa-solid fa-compress' : 'fa-solid fa-expand';
+
+            if (this.engineType === 'pageflip' && this.engine) {
+                setTimeout(() => this.engine.updateState(), 100);
+            }
+        }
+
+        // ====================================================================
+        // MEDIA HELPERS
+        // ====================================================================
+        openVideoModal(url) {
+            let embedUrl = url;
+            const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\s]+)/);
+            if (ytMatch) embedUrl = `https://www.youtube.com/embed/${ytMatch[1]}?autoplay=1`;
+
+            const vimeoMatch = url.match(/vimeo\.com\/(\d+)/);
+            if (vimeoMatch) embedUrl = `https://player.vimeo.com/video/${vimeoMatch[1]}?autoplay=1`;
+
+            const modal = document.createElement('div');
+            modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.9);display:flex;align-items:center;justify-content:center;z-index:10000;';
+            modal.innerHTML = `
+                <div style="position:relative;width:80vw;max-width:900px;aspect-ratio:16/9;">
+                    <iframe src="${embedUrl}" style="width:100%;height:100%;border:none;" allowfullscreen allow="autoplay"></iframe>
+                    <button onclick="this.parentElement.parentElement.remove()" style="position:absolute;top:-40px;right:0;background:none;border:none;color:white;font-size:24px;cursor:pointer;">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+            `;
+            modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+            document.body.appendChild(modal);
+        }
+
+        playAudio(url) {
+            if (this.currentAudio) {
+                this.currentAudio.pause();
+                this.currentAudio = null;
+            }
+            this.currentAudio = new Audio(url);
+            this.currentAudio.play().catch(console.error);
+        }
+    }
+
+    // ========================================================================
+    // INITIALIZE
+    // ========================================================================
+    const reader = new ReaderManager();
+    document.addEventListener('DOMContentLoaded', () => reader.init());
     </script>
+
 </body>
 </html>

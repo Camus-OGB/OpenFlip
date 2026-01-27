@@ -13,9 +13,11 @@ class Settings:
     STORAGE_DIR: Path = BASE_DIR / "storage"
     UPLOAD_DIR: Path = STORAGE_DIR / "uploads"
     PAGES_DIR: Path = STORAGE_DIR / "pages"
+    IMAGES_DIR: Path = STORAGE_DIR / "images"
     
     def __init__(self):
         self.UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
         self.PAGES_DIR.mkdir(parents=True, exist_ok=True)
+        self.IMAGES_DIR.mkdir(parents=True, exist_ok=True)
 
 settings = Settings()

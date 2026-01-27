@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Generate Page Flip Sound</title>
+</head>
+<body>
+    <h1>Page Flip Sound Generator</h1>
+    <p>This script generates a page flip sound and logs it as base64.</p>
+    <button onclick="generateSound()">Generate Sound</button>
+    <button onclick="playSound()">Play Sound</button>
+    <pre id="output" style="word-break: break-all; max-height: 300px; overflow-y: auto;"></pre>
+
+    <script>
+        let audioBlob;
+        let audioUrl;
+
+        function generateSound() {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const sampleRate = audioContext.sampleRate;
+            const duration = 0.15; // 150ms
+            const buffer = audioContext.createBuffer(1, sampleRate * duration, sampleRate);
+            const data = buffer.getChannelData(0);
+
+            // Crispy paper sound using multiple frequency layers
+            const now = audioContext.currentTime;
+            
+            // Noise generator
+            for (let i = 0; i < data.length; i++) {
+                // Base noise with exponential decay
+                const t = i / sampleRate;
+                const decayEnvelope = Math.exp(-t * 15); // Fast decay for papery feel
+                
+                // Mix of white noise and shaped frequencies
+                const whiteNoise = Math.random() * 2 - 1;
+                
+                // Add some frequency shaping (resonances around 2-4kHz)
+                const frequency1 = Math.sin(2 * Math.PI * 2500 * t) * 0.3;
+                const frequency2 = Math.sin(2 * Math.PI * 3500 * t) * 0.2;
+                
+                // Combine everything
+                data[i] = decayEnvelope * (whiteNoise * 0.6 + frequency1 + frequency2) * 0.3;
+            }
+
+            // Create source and apply envelope
+            const source = audioContext.createBufferSource();
+            source.buffer = buffer;
+            
+            // Add compression for more "punch"
+            const compressor = audioContext.createDynamicsCompressor();
+            compressor.threshold.value = -50;
+            compressor.knee.value = 40;
+            compressor.ratio.value = 12;
+            compressor.attack.value = 0.003;
+            compressor.release.value = 0.25;
+            
+            source.connect(compressor);
+            compressor.connect(audioContext.destination);
+            source.start(0);
+            source.stop(now + duration);
+
+            // Export as blob
+            audioContext.oncomplete = null;
+            const offlineContext = new OfflineAudioContext(1, sampleRate * duration, sampleRate);
+            const offlineBuffer = offlineContext.createBuffer(1, sampleRate * duration, sampleRate);
+            const offlineData = offlineBuffer.getChannelData(0);
+            
+            // Regenerate with offline context for export
+            for (let i = 0; i < offlineData.length; i++) {
+                const t = i / sampleRate;
+                const decayEnvelope = Math.exp(-t * 15);
+                const whiteNoise = Math.random() * 2 - 1;
+                const frequency1 = Math.sin(2 * Math.PI * 2500 * t) * 0.3;
+                const frequency2 = Math.sin(2 * Math.PI * 3500 * t) * 0.2;
+                offlineData[i] = decayEnvelope * (whiteNoise * 0.6 + frequency1 + frequency2) * 0.3;
+            }
+
+            const offlineSource = offlineContext.createBufferSource();
+            offlineSource.buffer = offlineBuffer;
+            offlineSource.connect(offlineContext.destination);
+            offlineSource.start(0);
+
+            offlineContext.startRendering().then(renderedBuffer => {
+                const wavBlob = bufferToWave(renderedBuffer);
+                audioBlob = wavBlob;
+                audioUrl = URL.createObjectURL(wavBlob);
+                document.getElementById('output').textContent = 'Sound generated successfully!\nSize: ' + wavBlob.size + ' bytes\nYou can now play it with the "Play Sound" button.';
+            });
+        }
+
+        function playSound() {
+            if (!audioUrl) {
+                alert('Generate sound first!');
+                return;
+            }
+            const audio = new Audio(audioUrl);
+            audio.play();
+        }
+
+        // Convert AudioBuffer to WAV Blob
+        function bufferToWave(abuffer) {
+            let numOfChan = abuffer.numberOfChannels,
+                length = abuffer.length * numOfChan * 2 + 44,
+                arrayBuffer = new ArrayBuffer(length),
+                view = new Uint8Array(arrayBuffer),
+                channels = [],
+                i, ch, index = 0,
+                audioData;
+
+            let offset = 0,
+                blockSize = 4096;
+            
+            for (i = 0; i < numOfChan; i++)
+                channels.push(abuffer.getChannelData(i));
+
+            let interleave = (channels, length) => {
+                let result = new Float32Array(length),
+                    index = 0,
+                    inputIndex = 0;
+
+                while (index < length) {
+                    for (let i = 0; i < channels.length; i++)
+                        result[index++] = channels[i][inputIndex];
+                    inputIndex++;
+                }
+                return result;
+            };
+
+            let dataLength = abuffer.length * numOfChan;
+            audioData = interleave(channels, dataLength);
+
+            let writeString = (view, offset, string) => {
+                for (let i = 0; i < string.length; i++) {
+                    view[offset + i] = string.charCodeAt(i);
+                }
+            };
+
+            let floatTo16BitPCM = (output, offset, input) => {
+                for (let i = 0; i < input.length; i++, offset += 2) {
+                    let s = Math.max(-1, Math.min(1, input[i]));
+                    output.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+                }
+            };
+
+            writeString(view, 0, 'RIFF');
+            view.setUint32(4, length - 8, true);
+            writeString(view, 8, 'WAVE');
+
+            writeString(view, 12, 'fmt ');
+            view.setUint32(16, 16, true);
+            view.setUint16(20, 1, true);
+            view.setUint16(22, numOfChan, true);
+            view.setUint32(24, abuffer.sampleRate, true);
+            view.setUint32(28, abuffer.sampleRate * 2 * numOfChan, true);
+            view.setUint16(32, numOfChan * 2, true);
+            view.setUint16(34, 16, true);
+
+            writeString(view, 36, 'data');
+            view.setUint32(40, dataLength * 2, true);
+            floatTo16BitPCM(new DataView(arrayBuffer), 44, audioData);
+
+            return new Blob([arrayBuffer], { type: 'audio/wav' });
+        }
+    </script>
+</body>
+</html>

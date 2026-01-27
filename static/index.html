@@ -3,152 +3,274 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OpenFlip - PDF vers Flipbook</title>
+    <title>OpenFlip - Vos PDF deviennent interactifs</title>
+
+    <!-- Google Fonts - Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
             theme: {
                 extend: {
-                    colors: {
-                        primary: {
-                            50: '#faf5ff',
-                            100: '#f3e8ff',
-                            500: '#c084fc',
-                            600: '#a855f7',
-                            700: '#9333ea',
-                        }
-                    }
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
                 }
             }
         }
     </script>
-</head>
-<body class="bg-white text-gray-900">
-    <!-- Header -->
-    <header class="border-b">
-        <div class="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
-            <a href="/" class="font-semibold flex items-center gap-2">
-                <svg class="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
-                </svg>
-                OpenFlip
-            </a>
-            <!-- <nav class="flex items-center gap-6">
-                <a href="/upload" class="text-sm text-gray-600 hover:text-gray-900">Créer</a>
-                <a href="https://github.com/openflip/openflip" target="_blank" class="text-sm text-gray-600 hover:text-gray-900">GitHub</a>
-            </nav> -->
-        </div>
-    </header>
 
-    <!-- Hero -->
-    <main class="max-w-5xl mx-auto px-4">
-        <section class="py-20 md:py-32 text-center">
-            <h1 class="text-4xl md:text-5xl font-bold leading-tight">
-                PDF vers Flipbook
-            </h1>
-            <p class="mt-4 text-lg text-gray-600 max-w-md mx-auto">
-                Transformez vos documents PDF en flipbooks interactifs. Open source et gratuit.
-            </p>
-            <div class="mt-8">
-                <a href="/upload" class="inline-flex items-center gap-2 px-6 py-3 bg-primary-600 text-white font-medium rounded-lg hover:bg-primary-700 transition-colors">
-                    Commencer
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
-                    </svg>
-                </a>
-            </div>
-        </section>
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
-        <!-- Features -->
-        <section class="py-16 border-t">
-            <div class="grid md:grid-cols-3 gap-8 max-w-3xl mx-auto">
-                <div class="text-center">
-                    <div class="w-12 h-12 mx-auto rounded-full bg-primary-100 flex items-center justify-center">
-                        <svg class="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
-                        </svg>
-                    </div>
-                    <h3 class="mt-4 font-semibold">Simple</h3>
-                    <p class="mt-2 text-sm text-gray-600">Glissez-déposez votre PDF, c'est tout.</p>
-                </div>
-                <div class="text-center">
-                    <div class="w-12 h-12 mx-auto rounded-full bg-primary-100 flex items-center justify-center">
-                        <svg class="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
-                        </svg>
-                    </div>
-                    <h3 class="mt-4 font-semibold">Privé</h3>
-                    <p class="mt-2 text-sm text-gray-600">Vos fichiers restent sur votre serveur.</p>
-                </div>
-                <div class="text-center">
-                    <div class="w-12 h-12 mx-auto rounded-full bg-primary-100 flex items-center justify-center">
-                        <svg class="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/>
-                        </svg>
-                    </div>
-                    <h3 class="mt-4 font-semibold">Responsive</h3>
-                    <p class="mt-2 text-sm text-gray-600">Fonctionne sur tous les appareils.</p>
-                </div>
-            </div>
-        </section>
-
-        <!-- Derniers flipbooks -->
-        <section id="recent" class="py-16 border-t">
-            <div class="flex items-center justify-between mb-8">
-                <h2 class="text-2xl font-bold">Derniers flipbooks</h2>
-                <a href="/gallery" id="viewAllBtn" class="hidden text-sm text-primary-600 hover:text-primary-700 font-medium">
-                    Voir tout →
-                </a>
-            </div>
-            <div id="recentList" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- Chargé dynamiquement -->
-            </div>
-            <p id="noRecent" class="text-center text-gray-500 hidden">Aucun flipbook pour le moment.</p>
-        </section>
-
-    </main>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
     <script>
-        async function loadRecentFlipbooks() {
-            try {
-                const res = await fetch('/api/documents');
-                const docs = await res.json();
-                
-                const list = document.getElementById('recentList');
-                const noRecent = document.getElementById('noRecent');
-                const viewAllBtn = document.getElementById('viewAllBtn');
-                
-                if (docs.length === 0) {
-                    list.classList.add('hidden');
-                    noRecent.classList.remove('hidden');
-                    return;
-                }
-                
-                // Afficher le bouton "Voir tout" s'il y a plus de 2 flipbooks
-                if (docs.length > 2) {
-                    viewAllBtn.classList.remove('hidden');
-                }
-                
-                // Prendre seulement les 2 derniers
-                const recentDocs = docs.slice(0, 2);
-                
-                list.innerHTML = recentDocs.map(doc => `
-                    <a href="/reader/${doc.id}" class="group block bg-white border rounded-xl overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-                        <div class="aspect-[16/10] bg-gray-100 overflow-hidden">
-                            <img src="${doc.thumbnail}" alt="${doc.title}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
-                        </div>
-                        <div class="p-4">
-                            <h3 class="font-semibold text-lg truncate">${doc.title}</h3>
-                            <p class="text-sm text-gray-500 mt-1">${doc.pages} pages</p>
-                        </div>
-                    </a>
-                `).join('');
-            } catch (err) {
-                console.error('Erreur chargement flipbooks:', err);
-            }
+        // Fonction pour charger les flipbooks depuis le backend
+        function loadFlipbooks() {
+            const container = document.getElementById('flipbooks-container');
+            const loading = document.getElementById('loading-state');
+
+            fetch('/api/documents?limit=3')
+                .then(response => response.json())
+                .then(flipbooks => {
+                    loading.style.display = 'none';
+                    
+                    if (flipbooks.length === 0) {
+                        container.innerHTML = `
+                            <div class="col-span-3 text-center py-12">
+                                <p class="text-slate-500">Aucun flipbook disponible pour le moment.</p>
+                            </div>
+                        `;
+                        return;
+                    }
+
+                    container.innerHTML = flipbooks.map(fb => `
+                        <a href="/reader/${fb.id}" class="group relative bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 block border border-slate-100">
+                            <!-- Image Container -->
+                            <div class="aspect-[3/4] bg-gradient-to-br from-slate-100 to-slate-50 relative overflow-hidden">
+                                <img src="${fb.thumbnail}" alt="${fb.title}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" onerror="this.parentElement.innerHTML = '<div class=\"flex items-center justify-center h-full bg-gradient-to-br from-indigo-100 to-indigo-50\"><i class=\"fa-solid fa-file-pdf text-indigo-300 text-5xl\"></i></div>'">
+                                <!-- Overlay Badge -->
+                                <div class="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-lg text-indigo-600 text-xs font-semibold shadow-md">
+                                    ${fb.pages} pages
+                                </div>
+                            </div>
+                            
+                            <!-- Content -->
+                            <div class="p-6">
+                                <h3 class="font-bold text-slate-900 text-base truncate group-hover:text-indigo-600 transition-colors">${fb.title}</h3>
+                                <p class="text-slate-500 text-xs mt-2 line-clamp-1">PDF Document</p>
+                                
+                                <!-- CTA Button -->
+                                <button class="w-full mt-4 py-2.5 bg-gradient-to-r from-indigo-600 to-indigo-500 text-white font-semibold rounded-lg hover:from-indigo-700 hover:to-indigo-600 transition-all duration-200 flex items-center justify-center gap-2 group-hover:gap-3">
+                                    <span>Ouvrir</span>
+                                    <i class="fa-solid fa-arrow-right text-sm transition-all"></i>
+                                </button>
+                            </div>
+                        </a>
+                    `).join('');
+                })
+                .catch(error => {
+                    console.error('Erreur lors du chargement des flipbooks:', error);
+                    loading.innerHTML = '<div class="col-span-3 text-center py-12"><p class="text-red-500">Erreur lors du chargement des flipbooks.</p></div>';
+                });
         }
-        
-        loadRecentFlipbooks();
+
+        // Charger les flipbooks au chargement de la page
+        document.addEventListener('DOMContentLoaded', loadFlipbooks);
     </script>
+</head>
+<body class="bg-slate-50 text-slate-900 font-sans antialiased">
+
+    <!-- Navbar Sticky -->
+    <nav class="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <!-- Logo -->
+                <a href="/" class="flex items-center gap-2 group">
+                    <div class="w-8 h-8 bg-gradient-to-br from-indigo-600 to-indigo-500 rounded-lg flex items-center justify-center shadow-sm">
+                        <i class="fa-solid fa-book-open text-white text-sm"></i>
+                    </div>
+                    <span class="font-semibold text-lg">
+                        <span class="text-indigo-600">Open</span><span class="text-slate-700">Flip</span>
+                    </span>
+                </a>
+
+                <!-- Navigation Links (Desktop) -->
+                <div class="hidden md:flex items-center gap-8">
+                    <a href="/" class="text-sm font-medium text-slate-900 hover:text-indigo-600 transition-colors">Accueil</a>
+                    <a href="/gallery" class="text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors">Galerie</a>
+                    <a href="#demo" class="text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors">Exemples</a>
+                </div>
+
+                <!-- CTA Button -->
+                <a href="/upload" class="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-indigo-500 text-white text-sm font-medium rounded-lg hover:from-indigo-700 hover:to-indigo-600 transition-all shadow-sm hover:shadow-md">
+                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                    <span class="hidden sm:inline">Uploader un PDF</span>
+                    <span class="sm:hidden">Uploader</span>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <main>
+        <!-- Hero Section -->
+        <section class="relative overflow-hidden">
+            <!-- Background Pattern -->
+            <div class="absolute inset-0 bg-gradient-to-b from-indigo-50/50 to-slate-50"></div>
+            <div class="absolute inset-0 opacity-30" style="background-image: url('data:image/svg+xml,%3Csvg width=&quot;60&quot; height=&quot;60&quot; viewBox=&quot;0 0 60 60&quot; xmlns=&quot;http://www.w3.org/2000/svg&quot;%3E%3Cg fill=&quot;none&quot; fill-rule=&quot;evenodd&quot;%3E%3Cg fill=&quot;%234F46E5&quot; fill-opacity=&quot;0.08&quot;%3E%3Cpath d=&quot;M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z&quot;/%3E%3C/g%3E%3C/g%3E%3C/svg%3E');"></div>
+
+            <div class="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-32">
+                <div class="text-center max-w-3xl mx-auto">
+                    <!-- Badge -->
+                    <div class="inline-flex items-center gap-2 px-3 py-1 bg-indigo-50 border border-indigo-100 rounded-full text-indigo-600 text-sm font-medium mb-6">
+                        <i class="fa-solid fa-sparkles"></i>
+                        Open Source & Gratuit
+                    </div>
+
+                    <!-- Titre Principal -->
+                    <h1 class="text-4xl sm:text-5xl md:text-6xl font-bold text-slate-900 leading-tight">
+                        Vos PDF deviennent
+                        <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-indigo-500"> interactifs</span>
+                    </h1>
+
+                    <!-- Sous-titre -->
+                    <p class="mt-6 text-lg sm:text-xl text-slate-600 max-w-2xl mx-auto leading-relaxed">
+                        Transformez vos documents PDF en flipbooks elegants et partageables.
+                        Aucune inscription requise, vos fichiers restent prives.
+                    </p>
+
+                    <!-- Zone de Drop Rapide -->
+                    <div class="mt-10" x-data="{ isDragging: false }">
+                        <a href="/upload"
+                           class="group relative block max-w-xl mx-auto p-8 sm:p-12 bg-white border-2 border-dashed rounded-2xl transition-all duration-300"
+                           :class="isDragging ? 'border-indigo-500 bg-indigo-50 scale-[1.02]' : 'border-slate-300 hover:border-indigo-400 hover:bg-indigo-50/50'"
+                           @dragover.prevent="isDragging = true"
+                           @dragleave.prevent="isDragging = false"
+                           @drop.prevent="isDragging = false">
+
+                            <div class="flex flex-col items-center">
+                                <div class="w-16 h-16 bg-indigo-100 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                                    <i class="fa-solid fa-file-pdf text-indigo-600 text-2xl"></i>
+                                </div>
+                                <p class="text-slate-900 font-semibold text-lg">Deposez votre PDF ici</p>
+                                <p class="text-slate-500 text-sm mt-2">ou cliquez pour parcourir vos fichiers</p>
+
+                                <div class="mt-6 inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-indigo-500 text-white text-sm font-medium rounded-lg group-hover:from-indigo-700 group-hover:to-indigo-600 transition-all shadow-sm">
+                                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                                    Commencer la conversion
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+
+                    <!-- Reassurance -->
+                    <div class="mt-8 flex flex-wrap items-center justify-center gap-6 text-sm text-slate-500">
+                        <div class="flex items-center gap-2">
+                            <i class="fa-solid fa-shield-check text-green-500"></i>
+                            Securise
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <i class="fa-solid fa-bolt text-amber-500"></i>
+                            Rapide
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <i class="fa-solid fa-infinity text-indigo-500"></i>
+                            Illimite
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section Demonstration -->
+        <section id="demo" class="py-20 md:py-28 bg-white">
+            <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+                <!-- Header Section -->
+                <div class="text-center mb-16">
+                    <h2 class="text-3xl sm:text-4xl font-bold text-slate-900">
+                        Vos flipbooks les plus recents
+                    </h2>
+                    <p class="mt-4 text-lg text-slate-600 max-w-2xl mx-auto">
+                        Decouvrez les documents que vous avez deja crees
+                    </p>
+                </div>
+
+                <!-- Grille dynamique -->
+                <div id="loading-state" class="grid md:grid-cols-3 gap-8">
+                    <div class="col-span-3 text-center py-12">
+                        <i class="fa-solid fa-spinner text-indigo-600 text-3xl animate-spin"></i>
+                        <p class="mt-4 text-slate-500">Chargement des flipbooks...</p>
+                    </div>
+                </div>
+                <div id="flipbooks-container" class="grid md:grid-cols-3 gap-8"></div>
+
+                <!-- CTA -->
+                <div class="mt-12 text-center">
+                    <a href="/gallery" class="inline-flex items-center gap-2 text-indigo-600 font-medium hover:text-indigo-700 transition-colors">
+                        Voir tous les flipbooks
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section Features (Bonus) -->
+        <section class="py-20 bg-slate-50">
+            <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="grid md:grid-cols-3 gap-8">
+                    <div class="text-center p-6">
+                        <div class="w-14 h-14 mx-auto bg-indigo-100 rounded-2xl flex items-center justify-center mb-4">
+                            <i class="fa-solid fa-upload text-indigo-600 text-xl"></i>
+                        </div>
+                        <h3 class="font-semibold text-slate-900 text-lg">Simple a utiliser</h3>
+                        <p class="text-slate-500 mt-2">Glissez-deposez votre PDF et c'est pret. Aucune configuration requise.</p>
+                    </div>
+                    <div class="text-center p-6">
+                        <div class="w-14 h-14 mx-auto bg-indigo-100 rounded-2xl flex items-center justify-center mb-4">
+                            <i class="fa-solid fa-lock text-indigo-600 text-xl"></i>
+                        </div>
+                        <h3 class="font-semibold text-slate-900 text-lg">100% Prive</h3>
+                        <p class="text-slate-500 mt-2">Vos fichiers restent sur votre serveur. Aucune donnee envoyee a des tiers.</p>
+                    </div>
+                    <div class="text-center p-6">
+                        <div class="w-14 h-14 mx-auto bg-indigo-100 rounded-2xl flex items-center justify-center mb-4">
+                            <i class="fa-solid fa-mobile-screen text-indigo-600 text-xl"></i>
+                        </div>
+                        <h3 class="font-semibold text-slate-900 text-lg">Responsive</h3>
+                        <p class="text-slate-500 mt-2">Vos flipbooks s'adaptent parfaitement a tous les ecrans.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div class="flex items-center gap-2">
+                    <div class="w-6 h-6 bg-gradient-to-br from-indigo-600 to-indigo-500 rounded-md flex items-center justify-center">
+                        <i class="fa-solid fa-book-open text-white text-xs"></i>
+                    </div>
+                    <span class="text-sm text-slate-600">
+                        <span class="font-medium text-indigo-600">Open</span><span class="font-medium text-slate-700">Flip</span>
+                        <span class="text-slate-400 ml-2">- Alternative Open Source</span>
+                    </span>
+                </div>
+                <div class="flex items-center gap-6 text-sm text-slate-500">
+                    <a href="https://github.com" target="_blank" class="hover:text-indigo-600 transition-colors">
+                        <i class="fa-brands fa-github text-lg"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
 </body>
 </html>

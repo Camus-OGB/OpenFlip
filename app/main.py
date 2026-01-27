@@ -20,5 +20,6 @@ app = FastAPI(title=settings.APP_NAME, lifespan=lifespan)
 
 app.mount("/static", StaticFiles(directory=settings.STATIC_DIR), name="static")
 app.mount("/pages", StaticFiles(directory=settings.PAGES_DIR), name="pages")
+app.mount("/storage/images", StaticFiles(directory=settings.STORAGE_DIR / "images"), name="images")
 
 app.include_router(router)

@@ -3,469 +3,1682 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Éditeur - OpenFlip</title>
+    <title>Editeur - OpenFlip</title>
+
+    <!-- Google Fonts - Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
     <script>
         tailwind.config = {
             theme: {
                 extend: {
-                    colors: {
-                        primary: { 50: '#faf5ff', 100: '#f3e8ff', 500: '#a855f7', 600: '#9333ea', 700: '#7c3aed' }
-                    }
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
                 }
             }
         }
     </script>
+
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <!-- Alpine Collapse Plugin -->
+    <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.x.x/dist/cdn.min.js"></script>
+
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <!-- Interact.js for drag/resize -->
+    <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
+
     <style>
-        * { box-sizing: border-box; }
-        .page-thumb { cursor: pointer; transition: all 0.2s; border: 3px solid transparent; }
-        .page-thumb:hover { transform: scale(1.03); }
-        .page-thumb.active { border-color: #9333ea; box-shadow: 0 0 0 2px rgba(147, 51, 234, 0.3); }
-        #canvasWrapper { position: relative; display: inline-block; user-select: none; }
-        #pageImage { display: block; max-height: 75vh; width: auto; pointer-events: none; }
-        #elementsLayer { position: absolute; top: 0; left: 0; right: 0; bottom: 0; overflow: hidden; }
-        .interactive-element {
-            position: absolute; border-radius: 6px; cursor: move;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-            transition: box-shadow 0.2s; touch-action: none;
+        [x-cloak] { display: none !important; }
+
+        /* Scrollbar Styling */
+        .custom-scroll::-webkit-scrollbar { width: 6px; }
+        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        .custom-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        /* Page Thumbnails */
+        .page-thumb {
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 3px solid transparent;
         }
-        .interactive-element:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.25); }
-        .interactive-element.selected { outline: 3px solid #9333ea; outline-offset: 2px; }
-        .element-video { background: linear-gradient(135deg, #fecaca 0%, #fca5a5 100%); border: 2px solid #ef4444; }
-        .element-video .element-icon { color: #dc2626; }
-        .element-video .video-thumb { position: absolute; inset: 0; background-size: cover; background-position: center; opacity: 0.7; }
-        .element-link { background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); border: 2px solid #3b82f6; }
-        .element-link .element-icon { color: #2563eb; }
-        .element-image { background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); border: 2px solid #10b981; }
-        .element-image .element-icon { color: #059669; }
-        .element-image .image-preview { position: absolute; inset: 0; background-size: cover; background-position: center; }
-        .element-icon { font-size: 24px; z-index: 1; }
-        .element-label { font-size: 10px; max-width: 90%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 4px; padding: 2px 6px; background: rgba(255,255,255,0.8); border-radius: 4px; z-index: 1; }
-        .delete-btn { position: absolute; top: -8px; right: -8px; width: 22px; height: 22px; background: #ef4444; color: white; border: 2px solid white; border-radius: 50%; font-size: 12px; cursor: pointer; display: none; align-items: center; justify-content: center; z-index: 10; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
-        .interactive-element:hover .delete-btn, .interactive-element.selected .delete-btn { display: flex; }
-        .resize-handle { position: absolute; width: 12px; height: 12px; background: white; border: 2px solid #9333ea; border-radius: 2px; display: none; }
-        .interactive-element.selected .resize-handle { display: block; }
-        .resize-handle.se { bottom: -6px; right: -6px; cursor: se-resize; }
-        .resize-handle.sw { bottom: -6px; left: -6px; cursor: sw-resize; }
-        .resize-handle.ne { top: -6px; right: -6px; cursor: ne-resize; }
-        .resize-handle.nw { top: -6px; left: -6px; cursor: nw-resize; }
-        .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; z-index: 1000; }
-        .modal-backdrop.active { display: flex; }
-        .toolbar-btn { display: flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 8px; font-weight: 500; font-size: 14px; transition: all 0.2s; cursor: pointer; border: none; }
-        .toolbar-btn:hover { transform: translateY(-1px); }
+        .page-thumb:hover { transform: scale(1.02); }
+        .page-thumb.active {
+            border-color: #4F46E5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+        }
+
+        /* Canvas */
+        #canvasWrapper {
+            position: relative;
+            display: inline-block;
+            user-select: none;
+            transition: box-shadow 0.3s ease;
+        }
+        #pageImage {
+            display: block;
+            max-height: 70vh;
+            width: auto;
+            pointer-events: none;
+        }
+        #elementsLayer {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            overflow: hidden;
+        }
+
+        /* Widget Elements */
+        .widget-element {
+            position: absolute;
+            border-radius: 8px;
+            cursor: move;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            transition: box-shadow 0.2s, outline 0.15s;
+            touch-action: none;
+        }
+        .widget-element:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.25); }
+        .widget-element.selected {
+            outline: 3px solid #4F46E5;
+            outline-offset: 2px;
+        }
+
+        /* Widget Types */
+        .widget-link {
+            background: linear-gradient(135deg, #EEF2FF 0%, #E0E7FF 100%);
+            border: 2px solid #6366F1;
+        }
+        .widget-link .widget-icon { color: #4F46E5; }
+
+        .widget-video {
+            background: linear-gradient(135deg, #FEE2E2 0%, #FECACA 100%);
+            border: 2px solid #EF4444;
+        }
+        .widget-video .widget-icon { color: #DC2626; }
+        .widget-video .video-thumb {
+            position: absolute; inset: 0;
+            background-size: cover;
+            background-position: center;
+            opacity: 0.7;
+        }
+
+        .widget-image {
+            background: linear-gradient(135deg, #D1FAE5 0%, #A7F3D0 100%);
+            border: 2px solid #10B981;
+        }
+        .widget-image .widget-icon { color: #059669; }
+        .widget-image .image-preview {
+            position: absolute; inset: 0;
+            background-size: cover;
+            background-position: center;
+        }
+
+        .widget-iframe {
+            background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
+            border: 2px solid #F59E0B;
+        }
+        .widget-iframe .widget-icon { color: #D97706; }
+
+        .widget-audio {
+            background: linear-gradient(135deg, #F3E8FF 0%, #E9D5FF 100%);
+            border: 2px solid #A855F7;
+        }
+        .widget-audio .widget-icon { color: #9333EA; }
+
+        .widget-icon { font-size: 24px; z-index: 1; }
+        .widget-label {
+            font-size: 10px;
+            max-width: 90%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            margin-top: 4px;
+            padding: 2px 6px;
+            background: rgba(255,255,255,0.9);
+            border-radius: 4px;
+            z-index: 1;
+        }
+
+        /* Delete Button */
+        .delete-btn {
+            position: absolute;
+            top: -10px; right: -10px;
+            width: 22px; height: 22px;
+            background: #EF4444;
+            color: white;
+            border: 2px solid white;
+            border-radius: 50%;
+            font-size: 10px;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .delete-btn:hover { transform: scale(1.1); }
+        .widget-element:hover .delete-btn,
+        .widget-element.selected .delete-btn { display: flex; }
+
+        /* Resize Handles */
+        .resize-handle {
+            position: absolute;
+            width: 10px; height: 10px;
+            background: white;
+            border: 2px solid #4F46E5;
+            border-radius: 2px;
+            display: none;
+        }
+        .widget-element.selected .resize-handle { display: block; }
+        .resize-handle.se { bottom: -5px; right: -5px; cursor: se-resize; }
+        .resize-handle.sw { bottom: -5px; left: -5px; cursor: sw-resize; }
+        .resize-handle.ne { top: -5px; right: -5px; cursor: ne-resize; }
+        .resize-handle.nw { top: -5px; left: -5px; cursor: nw-resize; }
+
+        /* Tool Button */
+        .tool-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 12px 8px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            border: 2px solid transparent;
+        }
+        .tool-btn:hover { transform: translateY(-2px); }
+        .tool-btn:active { transform: translateY(0); }
+
+        /* Section Toggle */
+        .section-header {
+            cursor: pointer;
+            user-select: none;
+        }
+        .section-header:hover { background: rgba(0,0,0,0.02); }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 24px; right: 24px;
+            padding: 14px 20px;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s ease;
+            z-index: 9999;
+        }
+        .toast.show { transform: translateY(0); opacity: 1; }
+        .toast-success { background: #059669; color: white; }
+        .toast-error { background: #DC2626; color: white; }
+
+        /* Background Pattern */
+        .bg-pattern {
+            background-image:
+                linear-gradient(45deg, #e2e8f0 25%, transparent 25%),
+                linear-gradient(-45deg, #e2e8f0 25%, transparent 25%),
+                linear-gradient(45deg, transparent 75%, #e2e8f0 75%),
+                linear-gradient(-45deg, transparent 75%, #e2e8f0 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+        }
     </style>
 </head>
-<body class="bg-gray-100 min-h-screen">
-    <header class="bg-white border-b shadow-sm sticky top-0 z-50">
-        <div class="max-w-screen-2xl mx-auto px-4 h-16 flex items-center justify-between">
+<body class="bg-slate-100 font-sans antialiased min-h-screen" x-data="editorApp()" x-init="init()">
+
+    <!-- Loading Overlay -->
+    <div x-show="loading" x-cloak class="fixed inset-0 bg-slate-50/95 flex items-center justify-center z-[9999]">
+        <div class="text-center">
+            <div class="w-14 h-14 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4"></div>
+            <p class="text-slate-600 font-medium">Chargement de l'editeur...</p>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <header class="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-50">
+        <div class="px-4 h-14 flex items-center justify-between">
+            <!-- Left -->
             <div class="flex items-center gap-4">
-                <a href="/" class="flex items-center gap-2 text-gray-800 font-semibold hover:text-primary-600 transition">
-                    <i class="fa-solid fa-book-open text-primary-600 text-xl"></i><span>OpenFlip</span>
+                <a href="/" class="flex items-center gap-2 group">
+                    <div class="w-8 h-8 bg-gradient-to-br from-indigo-600 to-indigo-500 rounded-lg flex items-center justify-center shadow-sm">
+                        <i class="fa-solid fa-book-open text-white text-sm"></i>
+                    </div>
+                    <span class="font-semibold text-lg hidden sm:inline">
+                        <span class="text-indigo-600">Open</span><span class="text-slate-700">Flip</span>
+                    </span>
                 </a>
-                <span class="text-gray-300">|</span>
-                <span class="text-gray-500 font-medium">Éditeur</span>
+                <span class="text-slate-300 hidden sm:inline">|</span>
+                <span class="text-slate-500 font-medium hidden sm:inline">Editeur</span>
             </div>
-            <div class="flex items-center gap-3">
-                <a href="javascript:history.back()" class="px-4 py-2 text-gray-600 hover:text-gray-800 transition"><i class="fa-solid fa-arrow-left mr-2"></i>Retour</a>
-                <button id="previewBtn" class="toolbar-btn bg-gray-100 text-gray-700 hover:bg-gray-200"><i class="fa-solid fa-eye"></i><span>Aperçu</span></button>
-                <button id="saveBtn" class="toolbar-btn bg-primary-600 text-white hover:bg-primary-700"><i class="fa-solid fa-save"></i><span>Sauvegarder</span></button>
+
+            <!-- Center - Title -->
+            <div class="flex-1 max-w-md mx-4">
+                <input
+                    type="text"
+                    x-model="flipbook.title"
+                    @input="markUnsaved()"
+                    class="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-center focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
+                    placeholder="Titre du flipbook"
+                >
+            </div>
+
+            <!-- Right -->
+            <div class="flex items-center gap-2">
+                <a href="/gallery" class="px-3 py-1.5 text-slate-500 hover:text-slate-700 text-sm transition-colors">
+                    <i class="fa-solid fa-arrow-left mr-1"></i>
+                    <span class="hidden sm:inline">Retour</span>
+                </a>
+                <button
+                    @click="preview()"
+                    class="px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg text-sm hover:bg-slate-200 transition-colors border border-slate-200"
+                >
+                    <i class="fa-solid fa-eye mr-1"></i>
+                    <span class="hidden sm:inline">Apercu</span>
+                </button>
+                <button
+                    @click="save()"
+                    :disabled="saving"
+                    class="px-4 py-1.5 bg-gradient-to-r from-indigo-600 to-indigo-500 text-white rounded-lg text-sm hover:from-indigo-700 hover:to-indigo-600 transition-all shadow-sm disabled:opacity-60"
+                >
+                    <i class="fa-solid" :class="saving ? 'fa-spinner fa-spin' : 'fa-save'"></i>
+                    <span class="ml-1.5 hidden sm:inline" x-text="saving ? 'Sauvegarde...' : 'Sauvegarder'"></span>
+                </button>
             </div>
         </div>
     </header>
 
-    <div class="flex h-[calc(100vh-64px)]">
-        <aside class="w-44 bg-white border-r flex flex-col">
-            <div class="p-3 border-b bg-gray-50"><h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Pages</h3></div>
-            <div id="pagesList" class="flex-1 overflow-y-auto p-3 space-y-3"></div>
+    <!-- Main Layout - 3 Columns -->
+    <div class="flex h-[calc(100vh-56px)]">
+
+        <!-- ============================================================ -->
+        <!-- LEFT COLUMN - Tools (260px) -->
+        <!-- ============================================================ -->
+        <aside class="w-[260px] bg-white border-r border-slate-200 flex flex-col overflow-hidden">
+
+            <!-- Pages Section -->
+            <div class="border-b border-slate-100">
+                <div
+                    class="section-header flex items-center justify-between px-4 py-3"
+                    @click="sections.pages = !sections.pages"
+                >
+                    <span class="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                        <i class="fa-solid fa-layer-group mr-2 text-indigo-500"></i>Pages
+                    </span>
+                    <i class="fa-solid text-slate-400 text-xs" :class="sections.pages ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+                </div>
+                <div x-show="sections.pages" x-collapse class="px-3 pb-3">
+                    <div class="flex gap-2 overflow-x-auto pb-2 custom-scroll">
+                        <template x-for="page in flipbook.pages" :key="page.page_num">
+                            <div
+                                class="page-thumb flex-shrink-0 w-16 rounded-lg overflow-hidden bg-white shadow-sm"
+                                :class="{ 'active': currentPageNum === page.page_num }"
+                                @click="loadPage(page.page_num)"
+                            >
+                                <img :src="page.image_url" class="w-full" :alt="'Page ' + page.page_num">
+                                <div class="text-[10px] text-center py-1 bg-slate-50 font-medium text-slate-600" x-text="page.page_num"></div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Add Widgets Section -->
+            <div class="border-b border-slate-100">
+                <div
+                    class="section-header flex items-center justify-between px-4 py-3"
+                    @click="sections.add = !sections.add"
+                >
+                    <span class="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                        <i class="fa-solid fa-plus-circle mr-2 text-emerald-500"></i>Ajouter
+                    </span>
+                    <i class="fa-solid text-slate-400 text-xs" :class="sections.add ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+                </div>
+                <div x-show="sections.add" x-collapse class="px-3 pb-4">
+                    <div class="grid grid-cols-3 gap-2">
+                        <!-- Link -->
+                        <button
+                            @click="openAddModal('link')"
+                            class="tool-btn bg-indigo-50 hover:bg-indigo-100 text-indigo-700"
+                        >
+                            <i class="fa-solid fa-link text-lg"></i>
+                            <span class="text-[10px] font-medium">Lien</span>
+                        </button>
+                        <!-- Video -->
+                        <button
+                            @click="openAddModal('video')"
+                            class="tool-btn bg-red-50 hover:bg-red-100 text-red-700"
+                        >
+                            <i class="fa-brands fa-youtube text-lg"></i>
+                            <span class="text-[10px] font-medium">Video</span>
+                        </button>
+                        <!-- Image -->
+                        <button
+                            @click="openAddModal('image')"
+                            class="tool-btn bg-emerald-50 hover:bg-emerald-100 text-emerald-700"
+                        >
+                            <i class="fa-solid fa-image text-lg"></i>
+                            <span class="text-[10px] font-medium">Image</span>
+                        </button>
+                        <!-- Iframe -->
+                        <button
+                            @click="openAddModal('iframe')"
+                            class="tool-btn bg-amber-50 hover:bg-amber-100 text-amber-700"
+                        >
+                            <i class="fa-solid fa-code text-lg"></i>
+                            <span class="text-[10px] font-medium">Iframe</span>
+                        </button>
+                        <!-- Audio -->
+                        <button
+                            @click="openAddModal('audio')"
+                            class="tool-btn bg-purple-50 hover:bg-purple-100 text-purple-700"
+                        >
+                            <i class="fa-solid fa-music text-lg"></i>
+                            <span class="text-[10px] font-medium">Audio</span>
+                        </button>
+                        <!-- Hotspot -->
+                        <button
+                            @click="openAddModal('hotspot')"
+                            class="tool-btn bg-cyan-50 hover:bg-cyan-100 text-cyan-700"
+                        >
+                            <i class="fa-solid fa-bullseye text-lg"></i>
+                            <span class="text-[10px] font-medium">Hotspot</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Design Section -->
+            <div class="border-b border-slate-100 flex-1 overflow-y-auto custom-scroll">
+                <div
+                    class="section-header flex items-center justify-between px-4 py-3"
+                    @click="sections.design = !sections.design"
+                >
+                    <span class="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                        <i class="fa-solid fa-palette mr-2 text-pink-500"></i>Design
+                    </span>
+                    <i class="fa-solid text-slate-400 text-xs" :class="sections.design ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+                </div>
+                <div x-show="sections.design" x-collapse class="px-4 pb-4 space-y-4">
+
+                    <!-- View Mode -->
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-2">
+                            <i class="fa-solid fa-desktop mr-1.5 text-slate-400"></i>Mode de vue
+                        </label>
+                        <select
+                            x-model="style.viewMode"
+                            @change="markUnsaved()"
+                            class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                        >
+                            <option value="standard">Livre (Flip)</option>
+                            <option value="coverflow">Galerie (Coverflow)</option>
+                            <option value="cards">Cartes</option>
+                            <option value="cube">Cube 3D</option>
+                            <option value="fade">Presentation (Slide)</option>
+                        </select>
+                    </div>
+
+                    <!-- Background Color -->
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-2">
+                            <i class="fa-solid fa-fill-drip mr-1.5 text-slate-400"></i>Couleur de fond
+                        </label>
+                        <div class="flex gap-2">
+                            <input
+                                type="color"
+                                x-model="style.backgroundColor"
+                                @input="markUnsaved()"
+                                class="w-10 h-10 rounded-lg border border-slate-200 cursor-pointer"
+                            >
+                            <input
+                                type="text"
+                                x-model="style.backgroundColor"
+                                @input="markUnsaved()"
+                                class="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-mono uppercase"
+                                placeholder="#0f172a"
+                            >
+                        </div>
+                    </div>
+
+                    <!-- Background Image -->
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-2">
+                            <i class="fa-solid fa-image mr-1.5 text-slate-400"></i>Image de fond
+                        </label>
+                        <div class="space-y-2">
+                            <input
+                                type="text"
+                                x-model="style.backgroundImage"
+                                @input="markUnsaved()"
+                                class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm"
+                                placeholder="URL de l'image..."
+                            >
+                            <label class="flex items-center justify-center gap-2 px-3 py-2 bg-slate-50 border border-dashed border-slate-300 rounded-lg text-sm text-slate-500 cursor-pointer hover:bg-slate-100 transition-colors">
+                                <i class="fa-solid fa-upload"></i>
+                                <span>Uploader</span>
+                                <input type="file" accept="image/*" class="hidden" @change="uploadBackgroundImage($event)">
+                            </label>
+                            <div x-show="style.backgroundImage" class="relative">
+                                <img :src="style.backgroundImage" class="w-full h-20 object-cover rounded-lg border border-slate-200">
+                                <button
+                                    @click="style.backgroundImage = ''; markUnsaved()"
+                                    class="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full text-xs hover:bg-red-600"
+                                >
+                                    <i class="fa-solid fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Logo -->
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-2">
+                            <i class="fa-solid fa-stamp mr-1.5 text-slate-400"></i>Logo
+                        </label>
+                        <div class="space-y-2">
+                            <div class="flex items-center gap-2">
+                                <input
+                                    type="checkbox"
+                                    x-model="style.showLogo"
+                                    @change="markUnsaved()"
+                                    class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                >
+                                <span class="text-sm text-slate-600">Afficher le logo</span>
+                            </div>
+                            <template x-if="style.showLogo">
+                                <div class="space-y-2">
+                                    <input
+                                        type="text"
+                                        x-model="style.logoUrl"
+                                        @input="markUnsaved()"
+                                        class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm"
+                                        placeholder="URL du logo..."
+                                    >
+                                    <label class="flex items-center justify-center gap-2 px-3 py-2 bg-slate-50 border border-dashed border-slate-300 rounded-lg text-sm text-slate-500 cursor-pointer hover:bg-slate-100">
+                                        <i class="fa-solid fa-upload"></i>
+                                        <span>Uploader logo</span>
+                                        <input type="file" accept="image/*" class="hidden" @change="uploadLogo($event)">
+                                    </label>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- Advanced Options -->
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-2">
+                            <i class="fa-solid fa-sliders mr-1.5 text-slate-400"></i>Options avancees
+                        </label>
+                        <div class="space-y-2">
+                            <div class="flex items-center gap-2">
+                                <input
+                                    type="checkbox"
+                                    x-model="style.showNavigation"
+                                    @change="markUnsaved()"
+                                    class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                >
+                                <span class="text-sm text-slate-600">Afficher navigation</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <input
+                                    type="checkbox"
+                                    x-model="style.showProgressBar"
+                                    @change="markUnsaved()"
+                                    class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                >
+                                <span class="text-sm text-slate-600">Barre de progression</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <input
+                                    type="checkbox"
+                                    x-model="style.allowFullscreen"
+                                    @change="markUnsaved()"
+                                    class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                >
+                                <span class="text-sm text-slate-600">Plein ecran</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <input
+                                    type="checkbox"
+                                    x-model="style.allowZoom"
+                                    @change="markUnsaved()"
+                                    class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                >
+                                <span class="text-sm text-slate-600">Zoom</span>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Status Bar -->
+            <div class="px-4 py-2 bg-slate-50 border-t border-slate-200 text-xs text-slate-500 flex items-center justify-between">
+                <span>
+                    <i class="fa-solid fa-cube mr-1"></i>
+                    <span x-text="getCurrentPageWidgets().length"></span> widget(s)
+                </span>
+                <span :class="hasUnsavedChanges ? 'text-amber-600' : 'text-emerald-600'">
+                    <i class="fa-solid" :class="hasUnsavedChanges ? 'fa-circle' : 'fa-check-circle'"></i>
+                    <span x-text="hasUnsavedChanges ? 'Non sauvegarde' : 'Sauvegarde'"></span>
+                </span>
+            </div>
         </aside>
 
-        <main class="flex-1 overflow-auto bg-gray-200 flex flex-col">
-            <div class="bg-white border-b p-3 flex items-center gap-4 flex-wrap shadow-sm">
-                <div class="flex items-center gap-2">
-                    <label class="text-sm text-gray-600 font-medium">Titre:</label>
-                    <input type="text" id="titleInput" class="px-3 py-2 border border-gray-300 rounded-lg text-sm w-72 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition">
+        <!-- ============================================================ -->
+        <!-- CENTER COLUMN - Canvas -->
+        <!-- ============================================================ -->
+        <main
+            class="flex-1 overflow-auto flex items-center justify-center p-8 transition-colors duration-300"
+            :style="getCanvasBackgroundStyle()"
+        >
+            <div
+                id="canvasWrapper"
+                class="bg-white rounded-xl shadow-2xl overflow-hidden relative"
+                @click.self="deselectAll()"
+            >
+                <img
+                    id="pageImage"
+                    :src="getCurrentPage()?.image_url || ''"
+                    alt="Page du flipbook"
+                    @load="onImageLoad()"
+                >
+                <div id="elementsLayer" @click.self="deselectAll()">
+                    <template x-for="widget in getCurrentPageWidgets()" :key="widget._localId">
+                        <div
+                            class="widget-element"
+                            :class="['widget-' + widget.type, { 'selected': selectedWidgetId === widget._localId }]"
+                            :id="widget._localId"
+                            :style="getWidgetStyle(widget)"
+                            @click.stop="selectWidget(widget._localId)"
+                            @dblclick.stop="openEditModal(widget._localId)"
+                            x-init="$nextTick(() => initWidgetInteract($el, widget._localId))"
+                        >
+                            <!-- Widget Content -->
+                            <template x-if="widget.type === 'video'">
+                                <div class="video-thumb" :style="'background-image: url(' + getYouTubeThumbnail(widget.props?.url) + ')'"></div>
+                            </template>
+                            <template x-if="widget.type === 'image' && widget.props?.url">
+                                <div class="image-preview" :style="'background-image: url(' + widget.props.url + ')'"></div>
+                            </template>
+
+                            <i class="widget-icon" :class="getWidgetIcon(widget.type)"></i>
+                            <span class="widget-label" x-text="getWidgetLabel(widget)"></span>
+
+                            <!-- Delete Button -->
+                            <button
+                                class="delete-btn"
+                                @click.stop="deleteWidget(widget._localId)"
+                            >
+                                <i class="fa-solid fa-times"></i>
+                            </button>
+
+                            <!-- Resize Handles -->
+                            <div class="resize-handle se"></div>
+                            <div class="resize-handle sw"></div>
+                            <div class="resize-handle ne"></div>
+                            <div class="resize-handle nw"></div>
+                        </div>
+                    </template>
                 </div>
-                <div class="h-8 w-px bg-gray-200"></div>
-                <button id="addLinkBtn" class="toolbar-btn bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200"><i class="fa-solid fa-link"></i><span>Lien</span></button>
-                <button id="addVideoBtn" class="toolbar-btn bg-red-50 text-red-700 hover:bg-red-100 border border-red-200"><i class="fa-brands fa-youtube"></i><span>Vidéo</span></button>
-                <button id="addImageBtn" class="toolbar-btn bg-green-50 text-green-700 hover:bg-green-100 border border-green-200"><i class="fa-solid fa-image"></i><span>Image</span></button>
-            </div>
-            <div class="flex-1 flex items-center justify-center p-6">
-                <div id="canvasWrapper" class="bg-white rounded-xl shadow-2xl">
-                    <img id="pageImage" src="" alt="Page du flipbook">
-                    <div id="elementsLayer"></div>
-                </div>
-            </div>
-            <div class="bg-white border-t p-2 text-center text-sm text-gray-500">
-                Page <span id="currentPageNum" class="font-semibold text-gray-700">1</span> / <span id="totalPages">1</span>
-                <span class="mx-3 text-gray-300">|</span>
-                <span id="elementCount" class="text-gray-400">0 élément(s)</span>
+
+                <!-- Logo Overlay Preview -->
+                <template x-if="style.showLogo && style.logoUrl">
+                    <div class="absolute top-3 left-3 z-20">
+                        <img :src="style.logoUrl" class="h-8 w-auto object-contain" alt="Logo">
+                    </div>
+                </template>
             </div>
         </main>
 
-        <aside class="w-72 bg-white border-l flex flex-col">
-            <div class="p-3 border-b bg-gray-50"><h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Propriétés</h3></div>
-            <div id="propertiesPanel" class="flex-1 overflow-y-auto p-4">
-                <div class="text-center text-gray-400 py-8"><i class="fa-solid fa-mouse-pointer text-3xl mb-3 opacity-50"></i><p class="text-sm">Sélectionnez un élément</p></div>
+        <!-- ============================================================ -->
+        <!-- RIGHT COLUMN - Properties (280px) -->
+        <!-- ============================================================ -->
+        <aside class="w-[280px] bg-white border-l border-slate-200 flex flex-col overflow-hidden">
+            <div class="px-4 py-3 border-b border-slate-100 bg-slate-50">
+                <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                    <i class="fa-solid fa-sliders mr-2 text-indigo-500"></i>Proprietes
+                </h3>
             </div>
-            <div class="border-t p-4">
-                <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Liens PDF détectés</h4>
-                <div id="extractedLinks" class="space-y-2 max-h-40 overflow-y-auto text-sm"><p class="text-gray-400 text-xs">Aucun lien</p></div>
+
+            <div class="flex-1 overflow-y-auto custom-scroll p-4">
+                <!-- No Selection -->
+                <template x-if="!selectedWidgetId">
+                    <div class="text-center text-slate-400 py-12">
+                        <i class="fa-solid fa-mouse-pointer text-4xl mb-4 opacity-40"></i>
+                        <p class="text-sm font-medium">Selectionnez un widget</p>
+                        <p class="text-xs text-slate-300 mt-1">ou ajoutez-en un nouveau</p>
+                    </div>
+                </template>
+
+                <!-- Widget Properties -->
+                <template x-if="selectedWidgetId && getSelectedWidget()">
+                    <div class="space-y-4">
+                        <!-- Widget Type Badge -->
+                        <div
+                            class="flex items-center gap-3 p-3 rounded-xl border"
+                            :class="getWidgetTypeClasses(getSelectedWidget().type)"
+                        >
+                            <i :class="getWidgetIcon(getSelectedWidget().type)" class="text-xl"></i>
+                            <span class="font-semibold" x-text="getWidgetTypeName(getSelectedWidget().type)"></span>
+                        </div>
+
+                        <!-- URL Field (all types) -->
+                        <div>
+                            <label class="block text-xs font-medium text-slate-600 mb-1.5">URL</label>
+                            <input
+                                type="url"
+                                :value="getSelectedWidget().props?.url || ''"
+                                @input="updateWidgetProp(selectedWidgetId, 'url', $event.target.value)"
+                                class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                                placeholder="https://..."
+                            >
+                        </div>
+
+                        <!-- Title (for link) -->
+                        <template x-if="getSelectedWidget().type === 'link'">
+                            <div>
+                                <label class="block text-xs font-medium text-slate-600 mb-1.5">Titre</label>
+                                <input
+                                    type="text"
+                                    :value="getSelectedWidget().props?.title || ''"
+                                    @input="updateWidgetProp(selectedWidgetId, 'title', $event.target.value)"
+                                    class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                                    placeholder="Titre du lien"
+                                >
+                            </div>
+                        </template>
+
+                        <!-- Tooltip (for hotspot) -->
+                        <template x-if="getSelectedWidget().type === 'hotspot'">
+                            <div>
+                                <label class="block text-xs font-medium text-slate-600 mb-1.5">Infobulle</label>
+                                <input
+                                    type="text"
+                                    :value="getSelectedWidget().props?.tooltip || ''"
+                                    @input="updateWidgetProp(selectedWidgetId, 'tooltip', $event.target.value)"
+                                    class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                                    placeholder="Texte au survol"
+                                >
+                            </div>
+                        </template>
+
+                        <!-- Target -->
+                        <div>
+                            <label class="block text-xs font-medium text-slate-600 mb-1.5">Ouvrir dans</label>
+                            <select
+                                :value="getSelectedWidget().props?.target || '_blank'"
+                                @change="updateWidgetProp(selectedWidgetId, 'target', $event.target.value)"
+                                class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                            >
+                                <option value="_blank">Nouvel onglet</option>
+                                <option value="_self">Meme onglet</option>
+                            </select>
+                        </div>
+
+                        <!-- Position Info -->
+                        <div class="p-3 bg-slate-50 rounded-lg">
+                            <p class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-2">Position</p>
+                            <div class="grid grid-cols-2 gap-2 text-xs text-slate-600">
+                                <div>X: <span x-text="Math.round(getSelectedWidget().geometry?.x || 0)"></span>px</div>
+                                <div>Y: <span x-text="Math.round(getSelectedWidget().geometry?.y || 0)"></span>px</div>
+                                <div>L: <span x-text="Math.round(getSelectedWidget().geometry?.width || 0)"></span>px</div>
+                                <div>H: <span x-text="Math.round(getSelectedWidget().geometry?.height || 0)"></span>px</div>
+                            </div>
+                        </div>
+
+                        <!-- Z-Index Controls -->
+                        <div>
+                            <label class="block text-xs font-medium text-slate-600 mb-1.5">Ordre (z-index)</label>
+                            <div class="flex gap-2">
+                                <button
+                                    @click="moveWidgetLayer(selectedWidgetId, -1)"
+                                    class="flex-1 px-3 py-2 bg-slate-100 text-slate-600 rounded-lg text-sm hover:bg-slate-200 transition-colors"
+                                >
+                                    <i class="fa-solid fa-arrow-down mr-1"></i>Reculer
+                                </button>
+                                <button
+                                    @click="moveWidgetLayer(selectedWidgetId, 1)"
+                                    class="flex-1 px-3 py-2 bg-slate-100 text-slate-600 rounded-lg text-sm hover:bg-slate-200 transition-colors"
+                                >
+                                    <i class="fa-solid fa-arrow-up mr-1"></i>Avancer
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Duplicate -->
+                        <button
+                            @click="duplicateWidget(selectedWidgetId)"
+                            class="w-full px-4 py-2.5 bg-indigo-50 text-indigo-700 rounded-lg text-sm font-medium hover:bg-indigo-100 transition-colors border border-indigo-100"
+                        >
+                            <i class="fa-solid fa-copy mr-2"></i>Dupliquer
+                        </button>
+
+                        <!-- Delete -->
+                        <button
+                            @click="deleteWidget(selectedWidgetId)"
+                            class="w-full px-4 py-2.5 bg-red-50 text-red-700 rounded-lg text-sm font-medium hover:bg-red-100 transition-colors border border-red-100"
+                        >
+                            <i class="fa-solid fa-trash mr-2"></i>Supprimer
+                        </button>
+                    </div>
+                </template>
+            </div>
+
+            <!-- Page Info -->
+            <div class="px-4 py-3 bg-slate-50 border-t border-slate-200 text-sm text-slate-600 flex items-center justify-center gap-2">
+                <span>Page</span>
+                <span class="font-semibold text-indigo-600" x-text="currentPageNum"></span>
+                <span>/</span>
+                <span x-text="flipbook.pages?.length || 0"></span>
             </div>
         </aside>
+
     </div>
 
-    <!-- Modals -->
-    <div id="linkModal" class="modal-backdrop">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
-            <div class="flex items-center gap-3 mb-6"><div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center"><i class="fa-solid fa-link text-blue-600"></i></div><h3 class="text-lg font-semibold">Ajouter un lien</h3></div>
-            <div class="space-y-4">
-                <div><label class="block text-sm font-medium text-gray-700 mb-2">URL</label><input type="url" id="linkUrl" placeholder="https://..." class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-2">Titre (optionnel)</label><input type="text" id="linkTitle" placeholder="Cliquez ici" class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"></div>
-            </div>
-            <div class="flex gap-3 mt-6">
-                <button onclick="closeModal('linkModal')" class="flex-1 px-4 py-3 border rounded-lg hover:bg-gray-50">Annuler</button>
-                <button onclick="confirmAddLink()" class="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Ajouter</button>
-            </div>
-        </div>
-    </div>
+    <!-- ================================================================== -->
+    <!-- MODALS -->
+    <!-- ================================================================== -->
 
-    <div id="videoModal" class="modal-backdrop">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
-            <div class="flex items-center gap-3 mb-6"><div class="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center"><i class="fa-brands fa-youtube text-red-600"></i></div><h3 class="text-lg font-semibold">Ajouter une vidéo</h3></div>
-            <div class="space-y-4">
-                <div><label class="block text-sm font-medium text-gray-700 mb-2">URL YouTube</label><input type="url" id="videoUrl" placeholder="https://youtube.com/watch?v=..." class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none"></div>
-                <div id="videoPreview" class="hidden"><img id="videoThumb" src="" class="w-full h-32 object-cover rounded-lg"></div>
-            </div>
-            <div class="flex gap-3 mt-6">
-                <button onclick="closeModal('videoModal')" class="flex-1 px-4 py-3 border rounded-lg hover:bg-gray-50">Annuler</button>
-                <button onclick="confirmAddVideo()" class="flex-1 px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700">Ajouter</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="imageModal" class="modal-backdrop">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
-            <div class="flex items-center gap-3 mb-6"><div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center"><i class="fa-solid fa-image text-green-600"></i></div><h3 class="text-lg font-semibold">Ajouter une image</h3></div>
-            <div class="space-y-4">
-                <div><label class="block text-sm font-medium text-gray-700 mb-2">URL de l'image</label><input type="url" id="imageUrl" placeholder="https://..." class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none"></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-2">Lien au clic (optionnel)</label><input type="url" id="imageLinkUrl" placeholder="https://..." class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none"></div>
-            </div>
-            <div class="flex gap-3 mt-6">
-                <button onclick="closeModal('imageModal')" class="flex-1 px-4 py-3 border rounded-lg hover:bg-gray-50">Annuler</button>
-                <button onclick="confirmAddImage()" class="flex-1 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700">Ajouter</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="editModal" class="modal-backdrop">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
-            <div class="flex items-center gap-3 mb-6"><div class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center"><i class="fa-solid fa-pen text-gray-600"></i></div><h3 class="text-lg font-semibold">Modifier l'élément</h3></div>
-            <div id="editModalContent" class="space-y-4"></div>
-            <div class="flex gap-3 mt-6">
-                <button onclick="closeModal('editModal')" class="flex-1 px-4 py-3 border rounded-lg hover:bg-gray-50">Annuler</button>
-                <button onclick="confirmEditElement()" class="flex-1 px-4 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700">Enregistrer</button>
-            </div>
-        </div>
-    </div>
-
-<script>
-(function() {
-    'use strict';
-
-    let flipbookData = null;
-    let currentPage = 1;
-    let selectedElementId = null;
-    let editingElementId = null;
-
-    const docId = window.location.pathname.split('/').pop();
-    const $pageImage = document.getElementById('pageImage');
-    const $elementsLayer = document.getElementById('elementsLayer');
-    const $canvasWrapper = document.getElementById('canvasWrapper');
-
-    // Utils
-    function getYouTubeId(url) {
-        const match = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
-        return match ? match[1] : null;
-    }
-    function getYouTubeThumbnail(url) {
-        const id = getYouTubeId(url);
-        return id ? `https://img.youtube.com/vi/${id}/mqdefault.jpg` : null;
-    }
-    function truncateUrl(url, maxLen = 30) {
-        if (!url) return '';
-        try { const u = new URL(url); let d = u.hostname + u.pathname; return d.length > maxLen ? d.substring(0, maxLen) + '...' : d; }
-        catch { return url.length > maxLen ? url.substring(0, maxLen) + '...' : url; }
-    }
-    function generateId() { return 'el_' + Math.random().toString(36).substr(2, 9); }
-
-    // Pixel <-> Percent
-    function getCanvasDimensions() { const r = $canvasWrapper.getBoundingClientRect(); return { width: r.width, height: r.height }; }
-    function percentToPixel(p, d) { return (p / 100) * d; }
-    function pixelToPercent(p, d) { return (p / d) * 100; }
-    function getElementPositionInPercent(el) {
-        const c = getCanvasDimensions();
-        return { x: pixelToPercent(parseFloat(el.style.left) || 0, c.width), y: pixelToPercent(parseFloat(el.style.top) || 0, c.height), width: pixelToPercent(el.offsetWidth, c.width), height: pixelToPercent(el.offsetHeight, c.height) };
-    }
-
-    // Data
-    function getCurrentPageData() { return flipbookData?.pages?.find(p => p.page_number === currentPage); }
-    function getCustomElements() { const p = getCurrentPageData(); if (!p) return []; if (!p.metadata.custom_elements) p.metadata.custom_elements = []; return p.metadata.custom_elements; }
-    function findElementById(id) { return getCustomElements().find(el => el.id === id); }
-    function updateElementData(id, updates) { const el = findElementById(id); if (el) Object.assign(el, updates); }
-    function deleteElementData(id) { const p = getCurrentPageData(); if (!p) return; const i = p.metadata.custom_elements.findIndex(el => el.id === id); if (i !== -1) p.metadata.custom_elements.splice(i, 1); }
-
-    // Render pages
-    function renderPagesList() {
-        const c = document.getElementById('pagesList'); c.innerHTML = '';
-        flipbookData.pages.forEach(page => {
-            const d = document.createElement('div');
-            d.className = `page-thumb rounded-lg overflow-hidden bg-white shadow ${currentPage === page.page_number ? 'active' : ''}`;
-            d.innerHTML = `<img src="${page.image_url}" class="w-full"><div class="text-xs text-center py-1 bg-gray-50 font-medium">${page.page_number}</div>`;
-            d.onclick = () => loadPage(page.page_number);
-            c.appendChild(d);
-        });
-    }
-
-    // Render elements
-    function renderElements() {
-        $elementsLayer.innerHTML = '';
-        const elements = getCustomElements();
-        const canvas = getCanvasDimensions();
-        elements.forEach(data => {
-            const el = createElementDOM(data, canvas);
-            $elementsLayer.appendChild(el);
-            initInteract(el);
-        });
-        updateElementCount();
-        updatePropertiesPanel();
-    }
-
-    function createElementDOM(data, canvas) {
-        const el = document.createElement('div');
-        el.className = `interactive-element element-${data.type}`;
-        el.id = data.id;
-        el.dataset.type = data.type;
-        el.style.left = percentToPixel(data.x, canvas.width) + 'px';
-        el.style.top = percentToPixel(data.y, canvas.height) + 'px';
-        el.style.width = percentToPixel(data.width, canvas.width) + 'px';
-        el.style.height = percentToPixel(data.height, canvas.height) + 'px';
-
-        let content = '';
-        if (data.type === 'video') {
-            const thumb = getYouTubeThumbnail(data.url);
-            if (thumb) content += `<div class="video-thumb" style="background-image: url('${thumb}')"></div>`;
-            content += `<i class="fa-brands fa-youtube element-icon"></i><span class="element-label">${truncateUrl(data.url, 20)}</span>`;
-        } else if (data.type === 'link') {
-            content += `<i class="fa-solid fa-link element-icon"></i><span class="element-label">${data.title || truncateUrl(data.url, 20)}</span>`;
-        } else if (data.type === 'image') {
-            if (data.url) content += `<div class="image-preview" style="background-image: url('${data.url}')"></div>`;
-            else content += `<i class="fa-solid fa-image element-icon"></i>`;
-        }
-        content += `<button class="delete-btn" onclick="event.stopPropagation(); window.deleteElement('${data.id}')"><i class="fa-solid fa-times"></i></button>`;
-        content += `<div class="resize-handle se"></div><div class="resize-handle sw"></div><div class="resize-handle ne"></div><div class="resize-handle nw"></div>`;
-        el.innerHTML = content;
-
-        el.addEventListener('click', e => { e.stopPropagation(); selectElement(data.id); });
-        el.addEventListener('dblclick', e => { e.stopPropagation(); openEditModal(data.id); });
-        if (selectedElementId === data.id) el.classList.add('selected');
-        return el;
-    }
-
-    function updateElementCount() { document.getElementById('elementCount').textContent = `${getCustomElements().length} élément(s)`; }
-
-    // Interact.js
-    function initInteract(el) {
-        interact(el).draggable({
-            inertia: false,
-            modifiers: [interact.modifiers.restrictRect({ restriction: 'parent', endOnly: false })],
-            listeners: {
-                start(e) { selectElement(e.target.id); },
-                move(e) { const t = e.target; t.style.left = (parseFloat(t.style.left) || 0) + e.dx + 'px'; t.style.top = (parseFloat(t.style.top) || 0) + e.dy + 'px'; },
-                end(e) { syncElementToData(e.target); }
-            }
-        }).resizable({
-            edges: { left: true, right: true, bottom: true, top: true },
-            modifiers: [interact.modifiers.restrictEdges({ outer: 'parent' }), interact.modifiers.restrictSize({ min: { width: 40, height: 30 } })],
-            inertia: false,
-            listeners: {
-                start(e) { selectElement(e.target.id); },
-                move(e) { const t = e.target; t.style.width = e.rect.width + 'px'; t.style.height = e.rect.height + 'px'; t.style.left = (parseFloat(t.style.left) || 0) + e.deltaRect.left + 'px'; t.style.top = (parseFloat(t.style.top) || 0) + e.deltaRect.top + 'px'; },
-                end(e) { syncElementToData(e.target); }
-            }
-        });
-    }
-
-    function syncElementToData(domEl) {
-        const pos = getElementPositionInPercent(domEl);
-        updateElementData(domEl.id, { x: Math.round(pos.x * 100) / 100, y: Math.round(pos.y * 100) / 100, width: Math.round(pos.width * 100) / 100, height: Math.round(pos.height * 100) / 100 });
-    }
-
-    // Selection
-    function selectElement(id) {
-        selectedElementId = id;
-        document.querySelectorAll('.interactive-element').forEach(el => el.classList.toggle('selected', el.id === id));
-        updatePropertiesPanel();
-    }
-    function deselectAll() { selectedElementId = null; document.querySelectorAll('.interactive-element').forEach(el => el.classList.remove('selected')); updatePropertiesPanel(); }
-
-    // Properties panel
-    function updatePropertiesPanel() {
-        const panel = document.getElementById('propertiesPanel');
-        if (!selectedElementId) { panel.innerHTML = `<div class="text-center text-gray-400 py-8"><i class="fa-solid fa-mouse-pointer text-3xl mb-3 opacity-50"></i><p class="text-sm">Sélectionnez un élément</p></div>`; return; }
-        const data = findElementById(selectedElementId);
-        if (!data) return;
-        const icons = { video: 'fa-brands fa-youtube', link: 'fa-solid fa-link', image: 'fa-solid fa-image' };
-        const colors = { video: 'red', link: 'blue', image: 'green' };
-        panel.innerHTML = `
-            <div class="space-y-4">
-                <div class="flex items-center gap-3 p-3 bg-${colors[data.type]}-50 rounded-lg"><i class="${icons[data.type]} text-${colors[data.type]}-600 text-xl"></i><span class="font-medium capitalize">${data.type}</span></div>
-                <div><label class="block text-xs text-gray-500 mb-1">URL</label><input type="url" value="${data.url || ''}" onchange="window.updateProp('${data.id}', 'url', this.value)" class="w-full px-3 py-2 border rounded-lg text-sm"></div>
-                ${data.type === 'link' ? `<div><label class="block text-xs text-gray-500 mb-1">Titre</label><input type="text" value="${data.title || ''}" onchange="window.updateProp('${data.id}', 'title', this.value)" class="w-full px-3 py-2 border rounded-lg text-sm"></div>` : ''}
-                ${data.type === 'image' ? `<div><label class="block text-xs text-gray-500 mb-1">Lien au clic</label><input type="url" value="${data.linkUrl || ''}" onchange="window.updateProp('${data.id}', 'linkUrl', this.value)" class="w-full px-3 py-2 border rounded-lg text-sm"></div>` : ''}
-                <div class="grid grid-cols-2 gap-2 text-xs text-gray-500">
-                    <div>X: ${data.x.toFixed(1)}%</div><div>Y: ${data.y.toFixed(1)}%</div>
-                    <div>W: ${data.width.toFixed(1)}%</div><div>H: ${data.height.toFixed(1)}%</div>
+    <!-- Add Widget Modal -->
+    <div
+        x-show="modal.show && modal.mode === 'add'"
+        x-cloak
+        class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[1000] p-4"
+        @click.self="closeModal()"
+    >
+        <div
+            class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
+            x-transition:enter="transition ease-out duration-200"
+            x-transition:enter-start="opacity-0 scale-95"
+            x-transition:enter-end="opacity-100 scale-100"
+        >
+            <div class="flex items-center gap-3 p-5 border-b border-slate-100">
+                <div
+                    class="w-11 h-11 rounded-xl flex items-center justify-center"
+                    :class="getModalIconBg(modal.type)"
+                >
+                    <i :class="getWidgetIcon(modal.type)" class="text-xl"></i>
                 </div>
-                <button onclick="window.deleteElement('${data.id}')" class="w-full px-4 py-2 bg-red-100 text-red-700 rounded-lg text-sm hover:bg-red-200 transition"><i class="fa-solid fa-trash mr-2"></i>Supprimer</button>
+                <div>
+                    <h3 class="text-lg font-semibold text-slate-900">Ajouter <span x-text="getWidgetTypeName(modal.type)"></span></h3>
+                    <p class="text-sm text-slate-500" x-text="getModalDescription(modal.type)"></p>
+                </div>
             </div>
-        `;
+
+            <div class="p-5 space-y-4">
+                <!-- URL -->
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1.5">URL *</label>
+                    <input
+                        type="url"
+                        x-model="modal.data.url"
+                        class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
+                        :placeholder="getUrlPlaceholder(modal.type)"
+                    >
+                </div>
+
+                <!-- Title (link only) -->
+                <template x-if="modal.type === 'link'">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1.5">Titre (optionnel)</label>
+                        <input
+                            type="text"
+                            x-model="modal.data.title"
+                            class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
+                            placeholder="Cliquez ici"
+                        >
+                    </div>
+                </template>
+
+                <!-- Tooltip (hotspot only) -->
+                <template x-if="modal.type === 'hotspot'">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1.5">Infobulle (optionnel)</label>
+                        <input
+                            type="text"
+                            x-model="modal.data.tooltip"
+                            class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
+                            placeholder="Texte au survol"
+                        >
+                    </div>
+                </template>
+
+                <!-- Video Preview -->
+                <template x-if="modal.type === 'video' && getYouTubeThumbnail(modal.data.url)">
+                    <div>
+                        <img :src="getYouTubeThumbnail(modal.data.url)" class="w-full h-32 object-cover rounded-xl border border-slate-200">
+                    </div>
+                </template>
+            </div>
+
+            <div class="flex gap-3 p-5 bg-slate-50 border-t border-slate-100">
+                <button
+                    @click="closeModal()"
+                    class="flex-1 px-4 py-2.5 border border-slate-200 text-slate-600 rounded-xl hover:bg-slate-100 transition-colors font-medium"
+                >
+                    Annuler
+                </button>
+                <button
+                    @click="confirmAddWidget()"
+                    class="flex-1 px-4 py-2.5 text-white rounded-xl transition-colors font-medium"
+                    :class="getModalButtonClass(modal.type)"
+                >
+                    Ajouter
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Widget Modal -->
+    <div
+        x-show="modal.show && modal.mode === 'edit'"
+        x-cloak
+        class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[1000] p-4"
+        @click.self="closeModal()"
+    >
+        <div
+            class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
+            x-transition:enter="transition ease-out duration-200"
+            x-transition:enter-start="opacity-0 scale-95"
+            x-transition:enter-end="opacity-100 scale-100"
+        >
+            <div class="flex items-center gap-3 p-5 border-b border-slate-100">
+                <div class="w-11 h-11 bg-slate-100 rounded-xl flex items-center justify-center">
+                    <i class="fa-solid fa-pen text-slate-600 text-lg"></i>
+                </div>
+                <h3 class="text-lg font-semibold text-slate-900">Modifier le widget</h3>
+            </div>
+
+            <div class="p-5 space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1.5">URL</label>
+                    <input
+                        type="url"
+                        x-model="modal.data.url"
+                        class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"
+                    >
+                </div>
+                <template x-if="modal.type === 'link'">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1.5">Titre</label>
+                        <input
+                            type="text"
+                            x-model="modal.data.title"
+                            class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"
+                        >
+                    </div>
+                </template>
+                <template x-if="modal.type === 'hotspot'">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1.5">Infobulle</label>
+                        <input
+                            type="text"
+                            x-model="modal.data.tooltip"
+                            class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"
+                        >
+                    </div>
+                </template>
+            </div>
+
+            <div class="flex gap-3 p-5 bg-slate-50 border-t border-slate-100">
+                <button @click="closeModal()" class="flex-1 px-4 py-2.5 border border-slate-200 text-slate-600 rounded-xl hover:bg-slate-100 transition-colors font-medium">Annuler</button>
+                <button @click="confirmEditWidget()" class="flex-1 px-4 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors font-medium">Enregistrer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" class="toast" :class="{ 'show': toast.show, 'toast-success': toast.type === 'success', 'toast-error': toast.type === 'error' }">
+        <div class="flex items-center gap-3">
+            <i class="fa-solid text-lg" :class="toast.type === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle'"></i>
+            <span x-text="toast.message"></span>
+        </div>
+    </div>
+
+    <!-- ================================================================== -->
+    <!-- ALPINE.JS APPLICATION -->
+    <!-- ================================================================== -->
+    <script>
+    function editorApp() {
+        return {
+            // State
+            loading: true,
+            saving: false,
+            hasUnsavedChanges: false,
+            flipbookId: null,
+            currentPageNum: 1,
+            selectedWidgetId: null,
+
+            // Flipbook Data
+            flipbook: {
+                id: null,
+                title: '',
+                pages: []
+            },
+
+            // Style Configuration
+            style: {
+                viewMode: 'standard',
+                backgroundColor: '#0f172a',
+                backgroundImage: '',
+                showLogo: false,
+                logoUrl: '',
+                showNavigation: true,
+                showProgressBar: true,
+                allowFullscreen: true,
+                allowZoom: true
+            },
+
+            // UI State
+            sections: {
+                pages: true,
+                add: true,
+                design: true
+            },
+
+            // Modal State
+            modal: {
+                show: false,
+                mode: 'add', // 'add' or 'edit'
+                type: 'link',
+                widgetId: null,
+                data: {}
+            },
+
+            // Toast State
+            toast: {
+                show: false,
+                type: 'success',
+                message: ''
+            },
+
+            // ============================================================
+            // INITIALIZATION
+            // ============================================================
+            async init() {
+                // Get flipbook ID from URL
+                const pathParts = window.location.pathname.split('/').filter(p => p);
+                this.flipbookId = pathParts[pathParts.length - 1];
+
+                if (!this.flipbookId || this.flipbookId === 'editor') {
+                    const urlParams = new URLSearchParams(window.location.search);
+                    this.flipbookId = urlParams.get('id');
+                }
+
+                if (!this.flipbookId) {
+                    this.showToast('ID de flipbook manquant', 'error');
+                    setTimeout(() => window.location.href = '/gallery', 2000);
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`/api/editor/${this.flipbookId}`);
+                    if (!response.ok) throw new Error('Document non trouve');
+
+                    const data = await response.json();
+                    this.flipbook = {
+                        id: data.id,
+                        title: data.title,
+                        pages: data.pages || []
+                    };
+
+                    // Load style if exists
+                    if (data.style) {
+                        this.style = { ...this.style, ...data.style };
+                    }
+
+                    // Add local IDs to widgets
+                    this.flipbook.pages.forEach(page => {
+                        if (page.widgets) {
+                            page.widgets.forEach(w => {
+                                if (!w._localId) {
+                                    w._localId = w.id ? `db_${w.id}` : this.generateId();
+                                }
+                            });
+                        }
+                    });
+
+                    document.title = `${this.flipbook.title} - Editeur - OpenFlip`;
+                    this.loading = false;
+
+                    // Setup keyboard shortcuts
+                    this.setupKeyboardShortcuts();
+
+                } catch (error) {
+                    console.error('Erreur:', error);
+                    this.showToast('Erreur de chargement: ' + error.message, 'error');
+                    this.loading = false;
+                }
+            },
+
+            setupKeyboardShortcuts() {
+                document.addEventListener('keydown', (e) => {
+                    // Don't trigger if typing in input
+                    if (['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName)) return;
+
+                    if (e.key === 'Delete' && this.selectedWidgetId) {
+                        this.deleteWidget(this.selectedWidgetId);
+                    }
+                    if (e.key === 'Escape') {
+                        this.deselectAll();
+                        this.closeModal();
+                    }
+                    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                        e.preventDefault();
+                        this.save();
+                    }
+                    if ((e.ctrlKey || e.metaKey) && e.key === 'd' && this.selectedWidgetId) {
+                        e.preventDefault();
+                        this.duplicateWidget(this.selectedWidgetId);
+                    }
+                });
+
+                // Warn before leaving
+                window.addEventListener('beforeunload', (e) => {
+                    if (this.hasUnsavedChanges) {
+                        e.preventDefault();
+                        e.returnValue = '';
+                    }
+                });
+            },
+
+            // ============================================================
+            // DATA ACCESS
+            // ============================================================
+            getCurrentPage() {
+                return this.flipbook.pages?.find(p => p.page_num === this.currentPageNum);
+            },
+
+            getCurrentPageWidgets() {
+                const page = this.getCurrentPage();
+                return page?.widgets || [];
+            },
+
+            getSelectedWidget() {
+                if (!this.selectedWidgetId) return null;
+                return this.getCurrentPageWidgets().find(w => w._localId === this.selectedWidgetId);
+            },
+
+            loadPage(pageNum) {
+                this.currentPageNum = pageNum;
+                this.selectedWidgetId = null;
+            },
+
+            // ============================================================
+            // WIDGET MANAGEMENT
+            // ============================================================
+            generateId() {
+                return 'w_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+            },
+
+            selectWidget(id) {
+                this.selectedWidgetId = id;
+            },
+
+            deselectAll() {
+                this.selectedWidgetId = null;
+            },
+
+            addWidget(type, props) {
+                const page = this.getCurrentPage();
+                if (!page) return;
+
+                if (!page.widgets) page.widgets = [];
+
+                const wrapper = document.getElementById('canvasWrapper');
+                const rect = wrapper?.getBoundingClientRect() || { width: 600, height: 800 };
+
+                const newWidget = {
+                    _localId: this.generateId(),
+                    type: type,
+                    props: props,
+                    geometry: {
+                        x: rect.width * 0.1,
+                        y: rect.height * 0.1,
+                        width: 140,
+                        height: 90
+                    },
+                    z_index: page.widgets.length
+                };
+
+                page.widgets.push(newWidget);
+                this.markUnsaved();
+                this.selectedWidgetId = newWidget._localId;
+            },
+
+            deleteWidget(id) {
+                const page = this.getCurrentPage();
+                if (!page || !page.widgets) return;
+
+                const index = page.widgets.findIndex(w => w._localId === id);
+                if (index !== -1) {
+                    page.widgets.splice(index, 1);
+                    if (this.selectedWidgetId === id) {
+                        this.selectedWidgetId = null;
+                    }
+                    this.markUnsaved();
+                }
+            },
+
+            duplicateWidget(id) {
+                const widget = this.getCurrentPageWidgets().find(w => w._localId === id);
+                if (!widget) return;
+
+                const page = this.getCurrentPage();
+                const newWidget = {
+                    ...JSON.parse(JSON.stringify(widget)),
+                    _localId: this.generateId(),
+                    geometry: {
+                        ...widget.geometry,
+                        x: (widget.geometry?.x || 0) + 20,
+                        y: (widget.geometry?.y || 0) + 20
+                    },
+                    z_index: page.widgets.length
+                };
+                delete newWidget.id;
+
+                page.widgets.push(newWidget);
+                this.markUnsaved();
+                this.selectedWidgetId = newWidget._localId;
+            },
+
+            updateWidgetProp(id, prop, value) {
+                const widget = this.getCurrentPageWidgets().find(w => w._localId === id);
+                if (widget) {
+                    if (!widget.props) widget.props = {};
+                    widget.props[prop] = value;
+                    this.markUnsaved();
+                }
+            },
+
+            updateWidgetGeometry(id, geometry) {
+                const widget = this.getCurrentPageWidgets().find(w => w._localId === id);
+                if (widget) {
+                    widget.geometry = { ...widget.geometry, ...geometry };
+                    this.markUnsaved();
+                }
+            },
+
+            moveWidgetLayer(id, direction) {
+                const widgets = this.getCurrentPageWidgets();
+                const widget = widgets.find(w => w._localId === id);
+                if (!widget) return;
+
+                const newZIndex = Math.max(0, (widget.z_index || 0) + direction);
+                widget.z_index = newZIndex;
+                this.markUnsaved();
+            },
+
+            // ============================================================
+            // INTERACT.JS
+            // ============================================================
+            initWidgetInteract(el, widgetId) {
+                if (!el || el._interactInitialized) return;
+                el._interactInitialized = true;
+
+                const self = this;
+
+                interact(el).draggable({
+                    inertia: false,
+                    modifiers: [
+                        interact.modifiers.restrictRect({ restriction: 'parent', endOnly: false })
+                    ],
+                    listeners: {
+                        start() { self.selectWidget(widgetId); },
+                        move(event) {
+                            const target = event.target;
+                            const x = (parseFloat(target.style.left) || 0) + event.dx;
+                            const y = (parseFloat(target.style.top) || 0) + event.dy;
+                            target.style.left = x + 'px';
+                            target.style.top = y + 'px';
+                        },
+                        end(event) {
+                            const target = event.target;
+                            self.updateWidgetGeometry(widgetId, {
+                                x: parseFloat(target.style.left) || 0,
+                                y: parseFloat(target.style.top) || 0
+                            });
+                        }
+                    }
+                }).resizable({
+                    edges: { left: true, right: true, bottom: true, top: true },
+                    modifiers: [
+                        interact.modifiers.restrictEdges({ outer: 'parent' }),
+                        interact.modifiers.restrictSize({ min: { width: 50, height: 40 } })
+                    ],
+                    inertia: false,
+                    listeners: {
+                        start() { self.selectWidget(widgetId); },
+                        move(event) {
+                            const target = event.target;
+                            target.style.width = event.rect.width + 'px';
+                            target.style.height = event.rect.height + 'px';
+                            target.style.left = (parseFloat(target.style.left) || 0) + event.deltaRect.left + 'px';
+                            target.style.top = (parseFloat(target.style.top) || 0) + event.deltaRect.top + 'px';
+                        },
+                        end(event) {
+                            const target = event.target;
+                            self.updateWidgetGeometry(widgetId, {
+                                x: parseFloat(target.style.left) || 0,
+                                y: parseFloat(target.style.top) || 0,
+                                width: target.offsetWidth,
+                                height: target.offsetHeight
+                            });
+                        }
+                    }
+                });
+            },
+
+            // ============================================================
+            // MODAL MANAGEMENT
+            // ============================================================
+            openAddModal(type) {
+                this.modal = {
+                    show: true,
+                    mode: 'add',
+                    type: type,
+                    widgetId: null,
+                    data: { url: '', title: '', tooltip: '' }
+                };
+            },
+
+            openEditModal(id) {
+                const widget = this.getCurrentPageWidgets().find(w => w._localId === id);
+                if (!widget) return;
+
+                this.modal = {
+                    show: true,
+                    mode: 'edit',
+                    type: widget.type,
+                    widgetId: id,
+                    data: { ...widget.props }
+                };
+            },
+
+            closeModal() {
+                this.modal.show = false;
+            },
+
+            confirmAddWidget() {
+                if (!this.modal.data.url?.trim()) {
+                    this.showToast('URL requise', 'error');
+                    return;
+                }
+
+                this.addWidget(this.modal.type, {
+                    url: this.modal.data.url.trim(),
+                    title: this.modal.data.title?.trim() || '',
+                    tooltip: this.modal.data.tooltip?.trim() || '',
+                    target: '_blank'
+                });
+
+                this.closeModal();
+                this.showToast('Widget ajoute', 'success');
+            },
+
+            confirmEditWidget() {
+                if (!this.modal.widgetId) return;
+
+                const widget = this.getCurrentPageWidgets().find(w => w._localId === this.modal.widgetId);
+                if (!widget) return;
+
+                widget.props = {
+                    ...widget.props,
+                    url: this.modal.data.url || '',
+                    title: this.modal.data.title || '',
+                    tooltip: this.modal.data.tooltip || ''
+                };
+
+                this.markUnsaved();
+                this.closeModal();
+                this.showToast('Widget modifie', 'success');
+            },
+
+            // ============================================================
+            // STYLE HELPERS
+            // ============================================================
+            getWidgetStyle(widget) {
+                const geo = widget.geometry || {};
+                return {
+                    left: (geo.x || 50) + 'px',
+                    top: (geo.y || 50) + 'px',
+                    width: (geo.width || 120) + 'px',
+                    height: (geo.height || 80) + 'px',
+                    zIndex: widget.z_index || 0
+                };
+            },
+
+            getWidgetIcon(type) {
+                const icons = {
+                    link: 'fa-solid fa-link',
+                    video: 'fa-brands fa-youtube',
+                    image: 'fa-solid fa-image',
+                    iframe: 'fa-solid fa-code',
+                    audio: 'fa-solid fa-music',
+                    hotspot: 'fa-solid fa-bullseye'
+                };
+                return icons[type] || 'fa-solid fa-question';
+            },
+
+            getWidgetTypeName(type) {
+                const names = {
+                    link: 'Lien',
+                    video: 'Video',
+                    image: 'Image',
+                    iframe: 'Iframe',
+                    audio: 'Audio',
+                    hotspot: 'Hotspot'
+                };
+                return names[type] || 'Widget';
+            },
+
+            getWidgetLabel(widget) {
+                const props = widget.props || {};
+                if (props.title) return props.title;
+                if (props.tooltip) return props.tooltip;
+                if (props.url) {
+                    try {
+                        const u = new URL(props.url);
+                        return u.hostname.replace('www.', '');
+                    } catch {
+                        return props.url.substring(0, 20);
+                    }
+                }
+                return this.getWidgetTypeName(widget.type);
+            },
+
+            getWidgetTypeClasses(type) {
+                const classes = {
+                    link: 'bg-indigo-50 border-indigo-200 text-indigo-700',
+                    video: 'bg-red-50 border-red-200 text-red-700',
+                    image: 'bg-emerald-50 border-emerald-200 text-emerald-700',
+                    iframe: 'bg-amber-50 border-amber-200 text-amber-700',
+                    audio: 'bg-purple-50 border-purple-200 text-purple-700',
+                    hotspot: 'bg-cyan-50 border-cyan-200 text-cyan-700'
+                };
+                return classes[type] || 'bg-slate-50 border-slate-200 text-slate-700';
+            },
+
+            getModalIconBg(type) {
+                const bg = {
+                    link: 'bg-indigo-100 text-indigo-600',
+                    video: 'bg-red-100 text-red-600',
+                    image: 'bg-emerald-100 text-emerald-600',
+                    iframe: 'bg-amber-100 text-amber-600',
+                    audio: 'bg-purple-100 text-purple-600',
+                    hotspot: 'bg-cyan-100 text-cyan-600'
+                };
+                return bg[type] || 'bg-slate-100 text-slate-600';
+            },
+
+            getModalButtonClass(type) {
+                const classes = {
+                    link: 'bg-indigo-600 hover:bg-indigo-700',
+                    video: 'bg-red-600 hover:bg-red-700',
+                    image: 'bg-emerald-600 hover:bg-emerald-700',
+                    iframe: 'bg-amber-600 hover:bg-amber-700',
+                    audio: 'bg-purple-600 hover:bg-purple-700',
+                    hotspot: 'bg-cyan-600 hover:bg-cyan-700'
+                };
+                return classes[type] || 'bg-slate-600 hover:bg-slate-700';
+            },
+
+            getModalDescription(type) {
+                const desc = {
+                    link: 'Creez une zone cliquable',
+                    video: 'YouTube, Vimeo, etc.',
+                    image: 'Image superposee',
+                    iframe: 'Contenu externe',
+                    audio: 'Fichier audio',
+                    hotspot: 'Zone interactive invisible'
+                };
+                return desc[type] || '';
+            },
+
+            getUrlPlaceholder(type) {
+                const placeholders = {
+                    link: 'https://example.com',
+                    video: 'https://youtube.com/watch?v=...',
+                    image: 'https://example.com/image.jpg',
+                    iframe: 'https://example.com/embed',
+                    audio: 'https://example.com/audio.mp3',
+                    hotspot: 'https://example.com'
+                };
+                return placeholders[type] || 'https://...';
+            },
+
+            getYouTubeThumbnail(url) {
+                if (!url) return '';
+                const match = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+                return match ? `https://img.youtube.com/vi/${match[1]}/mqdefault.jpg` : '';
+            },
+
+            getCanvasBackgroundStyle() {
+                let style = {};
+
+                if (this.style.backgroundImage) {
+                    style.backgroundImage = `url(${this.style.backgroundImage})`;
+                    style.backgroundSize = 'cover';
+                    style.backgroundPosition = 'center';
+                } else if (this.style.backgroundColor) {
+                    style.backgroundColor = this.style.backgroundColor;
+                } else {
+                    style.backgroundColor = '#e2e8f0';
+                }
+
+                return style;
+            },
+
+            onImageLoad() {
+                // Refresh widgets after image loads
+                this.$nextTick(() => {
+                    // Re-init any widgets that need it
+                });
+            },
+
+            // ============================================================
+            // FILE UPLOADS
+            // ============================================================
+            async uploadBackgroundImage(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                this.showToast('Téléchargement de l\'image...', 'info');
+                
+                try {
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    
+                    const response = await fetch('/api/upload/image', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    if (!response.ok) {
+                        const error = await response.json();
+                        throw new Error(error.detail || 'Erreur d\'upload');
+                    }
+                    
+                    const data = await response.json();
+                    this.style.backgroundImage = data.url;
+                    this.markUnsaved();
+                    this.showToast('Image de fond ajoutée', 'success');
+                } catch (error) {
+                    console.error('Upload error:', error);
+                    this.showToast('Erreur: ' + error.message, 'error');
+                }
+            },
+
+            async uploadLogo(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                this.showToast('Téléchargement du logo...', 'info');
+                
+                try {
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    
+                    const response = await fetch('/api/upload/image', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    if (!response.ok) {
+                        const error = await response.json();
+                        throw new Error(error.detail || 'Erreur d\'upload');
+                    }
+                    
+                    const data = await response.json();
+                    this.style.logoUrl = data.url;
+                    this.markUnsaved();
+                    this.showToast('Logo ajouté', 'success');
+                } catch (error) {
+                    console.error('Upload error:', error);
+                    this.showToast('Erreur: ' + error.message, 'error');
+                }
+            },
+
+            // ============================================================
+            // SAVE & PREVIEW
+            // ============================================================
+            markUnsaved() {
+                this.hasUnsavedChanges = true;
+            },
+
+            async save() {
+                if (!this.flipbookId) return;
+
+                this.saving = true;
+
+                try {
+                    // Build payload with widgets AND style
+                    const payload = {
+                        title: this.flipbook.title,
+                        pages: this.flipbook.pages.map(page => ({
+                            page_num: page.page_num,
+                            widgets: (page.widgets || []).map(w => ({
+                                type: w.type,
+                                props: w.props || {},
+                                geometry: w.geometry || {},
+                                z_index: w.z_index || 0
+                            }))
+                        })),
+                        style: {
+                            viewMode: this.style.viewMode,
+                            backgroundColor: this.style.backgroundColor,
+                            backgroundImage: this.style.backgroundImage,
+                            showLogo: this.style.showLogo,
+                            logoUrl: this.style.logoUrl,
+                            showNavigation: this.style.showNavigation,
+                            showProgressBar: this.style.showProgressBar,
+                            allowFullscreen: this.style.allowFullscreen,
+                            allowZoom: this.style.allowZoom
+                        }
+                    };
+
+                    console.log('Saving payload:', JSON.stringify(payload, null, 2));
+
+                    const response = await fetch(`/api/editor/${this.flipbookId}/save`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json().catch(() => ({}));
+                        throw new Error(errorData.detail || `Erreur ${response.status}`);
+                    }
+
+                    this.hasUnsavedChanges = false;
+                    this.showToast('Sauvegarde reussie !', 'success');
+
+                } catch (error) {
+                    console.error('Save error:', error);
+                    this.showToast('Erreur: ' + error.message, 'error');
+                } finally {
+                    this.saving = false;
+                }
+            },
+
+            preview() {
+                if (this.flipbookId) {
+                    // Store preview data in localStorage before opening window
+                    const previewData = {
+                        id: this.flipbookId,
+                        title: this.flipbook.title,
+                        page_count: this.flipbook.pages?.length || 0,
+                        style: {
+                            viewMode: this.style.viewMode,
+                            backgroundColor: this.style.backgroundColor,
+                            backgroundImage: this.style.backgroundImage,
+                            showLogo: this.style.showLogo,
+                            logoUrl: this.style.logoUrl,
+                            showNavigation: this.style.showNavigation,
+                            showProgressBar: this.style.showProgressBar,
+                            allowFullscreen: this.style.allowFullscreen,
+                            allowZoom: this.style.allowZoom
+                        },
+                        pages: this.flipbook.pages.map(page => ({
+                            page_num: page.page_num,
+                            image_url: page.image_url,
+                            width: page.width,
+                            height: page.height,
+                            widgets: (page.widgets || []).map(w => ({
+                                type: w.type,
+                                props: w.props || {},
+                                geometry: w.geometry || {},
+                                z_index: w.z_index || 0
+                            }))
+                        }))
+                    };
+
+                    // Store in localStorage
+                    try {
+                        localStorage.setItem(`preview_${this.flipbookId}`, JSON.stringify(previewData));
+                        console.log('✓ Preview data stored in localStorage');
+                    } catch (e) {
+                        console.error('Failed to store preview data:', e);
+                        this.showToast('Erreur: impossible de stocker les données de prévisualisation', 'error');
+                        return;
+                    }
+
+                    // Open preview window
+                    const previewWindow = window.open(`/reader/${this.flipbookId}?preview=1`, '_blank');
+                    
+                    if (!previewWindow) {
+                        this.showToast('Impossible d\'ouvrir la fenetre preview', 'error');
+                    }
+                }
+            },
+
+            // ============================================================
+            // TOAST
+            // ============================================================
+            showToast(message, type = 'success') {
+                this.toast = { show: true, type, message };
+                setTimeout(() => {
+                    this.toast.show = false;
+                }, 3000);
+            }
+        };
     }
+    </script>
 
-    // Global functions
-    window.updateProp = (id, prop, value) => { updateElementData(id, { [prop]: value }); renderElements(); };
-    window.deleteElement = (id) => { deleteElementData(id); renderElements(); };
-    window.openModal = (id) => document.getElementById(id).classList.add('active');
-    window.closeModal = (id) => document.getElementById(id).classList.remove('active');
-
-    function addElement(type, data) {
-        const elements = getCustomElements();
-        elements.push({ id: generateId(), type, x: 10, y: 10, width: 20, height: 15, ...data });
-        renderElements();
-    }
-
-    window.confirmAddLink = () => {
-        const url = document.getElementById('linkUrl').value.trim();
-        const title = document.getElementById('linkTitle').value.trim();
-        if (!url) return alert('URL requise');
-        addElement('link', { url, title });
-        document.getElementById('linkUrl').value = '';
-        document.getElementById('linkTitle').value = '';
-        closeModal('linkModal');
-    };
-
-    window.confirmAddVideo = () => {
-        const url = document.getElementById('videoUrl').value.trim();
-        if (!url) return alert('URL requise');
-        addElement('video', { url });
-        document.getElementById('videoUrl').value = '';
-        closeModal('videoModal');
-    };
-
-    window.confirmAddImage = () => {
-        const url = document.getElementById('imageUrl').value.trim();
-        const linkUrl = document.getElementById('imageLinkUrl').value.trim();
-        if (!url) return alert('URL requise');
-        addElement('image', { url, linkUrl });
-        document.getElementById('imageUrl').value = '';
-        document.getElementById('imageLinkUrl').value = '';
-        closeModal('imageModal');
-    };
-
-    function openEditModal(id) {
-        editingElementId = id;
-        const data = findElementById(id);
-        if (!data) return;
-        const content = document.getElementById('editModalContent');
-        content.innerHTML = `
-            <div><label class="block text-sm font-medium mb-2">URL</label><input type="url" id="editUrl" value="${data.url || ''}" class="w-full px-4 py-3 border rounded-lg"></div>
-            ${data.type === 'link' ? `<div><label class="block text-sm font-medium mb-2">Titre</label><input type="text" id="editTitle" value="${data.title || ''}" class="w-full px-4 py-3 border rounded-lg"></div>` : ''}
-            ${data.type === 'image' ? `<div><label class="block text-sm font-medium mb-2">Lien au clic</label><input type="url" id="editLinkUrl" value="${data.linkUrl || ''}" class="w-full px-4 py-3 border rounded-lg"></div>` : ''}
-        `;
-        openModal('editModal');
-    }
-
-    window.confirmEditElement = () => {
-        if (!editingElementId) return;
-        const data = findElementById(editingElementId);
-        if (!data) return;
-        data.url = document.getElementById('editUrl')?.value || data.url;
-        if (data.type === 'link') data.title = document.getElementById('editTitle')?.value || '';
-        if (data.type === 'image') data.linkUrl = document.getElementById('editLinkUrl')?.value || '';
-        renderElements();
-        closeModal('editModal');
-        editingElementId = null;
-    };
-
-    // Extracted links
-    function renderExtractedLinks(links) {
-        const c = document.getElementById('extractedLinks');
-        if (!links || links.length === 0) { c.innerHTML = '<p class="text-gray-400 text-xs">Aucun lien</p>'; return; }
-        c.innerHTML = links.map(l => `<a href="${l.url}" target="_blank" class="block p-2 bg-blue-50 rounded text-blue-600 hover:bg-blue-100 truncate text-xs" title="${l.url}">${truncateUrl(l.url, 35)}</a>`).join('');
-    }
-
-    // Load
-    async function loadEditorData() {
-        try {
-            const res = await fetch(`/api/editor/${docId}`);
-            if (!res.ok) throw new Error('Flipbook not found');
-            flipbookData = await res.json();
-            document.getElementById('titleInput').value = flipbookData.title;
-            document.getElementById('totalPages').textContent = flipbookData.page_count;
-            renderPagesList();
-            loadPage(1);
-        } catch (e) { alert('Erreur: ' + e.message); }
-    }
-
-    function loadPage(pageNum) {
-        currentPage = pageNum;
-        const page = getCurrentPageData();
-        if (!page) return;
-        $pageImage.onload = () => renderElements();
-        $pageImage.src = page.image_url;
-        document.getElementById('currentPageNum').textContent = pageNum;
-        renderPagesList();
-        renderExtractedLinks(page.metadata.links || []);
-    }
-
-    // Save
-    document.getElementById('saveBtn').onclick = async () => {
-        const btn = document.getElementById('saveBtn');
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>Sauvegarde...';
-        try {
-            const payload = { title: document.getElementById('titleInput').value, pages: flipbookData.pages.map(p => ({ page_number: p.page_number, metadata: p.metadata })) };
-            const res = await fetch(`/api/editor/${docId}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-            if (!res.ok) throw new Error('Erreur');
-            btn.innerHTML = '<i class="fa-solid fa-check mr-2"></i>Sauvegardé !';
-            setTimeout(() => { btn.innerHTML = '<i class="fa-solid fa-save"></i><span>Sauvegarder</span>'; btn.disabled = false; }, 2000);
-        } catch (e) { alert('Erreur: ' + e.message); btn.innerHTML = '<i class="fa-solid fa-save"></i><span>Sauvegarder</span>'; btn.disabled = false; }
-    };
-
-    // Preview
-    document.getElementById('previewBtn').onclick = () => window.open(`/reader/${docId}`, '_blank');
-
-    // Events
-    document.getElementById('addLinkBtn').onclick = () => openModal('linkModal');
-    document.getElementById('addVideoBtn').onclick = () => openModal('videoModal');
-    document.getElementById('addImageBtn').onclick = () => openModal('imageModal');
-    $canvasWrapper.addEventListener('click', e => { if (e.target === $canvasWrapper || e.target === $pageImage || e.target === $elementsLayer) deselectAll(); });
-    document.addEventListener('keydown', e => { if (e.key === 'Delete' && selectedElementId) { deleteElement(selectedElementId); } if (e.key === 'Escape') deselectAll(); });
-
-    // Video URL preview
-    document.getElementById('videoUrl').addEventListener('input', e => {
-        const thumb = getYouTubeThumbnail(e.target.value);
-        const preview = document.getElementById('videoPreview');
-        const img = document.getElementById('videoThumb');
-        if (thumb) { img.src = thumb; preview.classList.remove('hidden'); }
-        else { preview.classList.add('hidden'); }
-    });
-
-    loadEditorData();
-})();
-</script>
 </body>
 </html>
