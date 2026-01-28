@@ -547,7 +547,7 @@
         }
 
         .widget-link-text {
-            color: white;
+            color: inherit;
             font-size: 12px;
             font-weight: 500;
             text-decoration: underline;
@@ -573,7 +573,7 @@
         }
 
         .widget-overlay .widget-icon {
-            color: white;
+            color: inherit;
             font-size: 24px;
             opacity: 0.8;
         }
@@ -1541,6 +1541,7 @@
                 width: ${width}%;
                 height: ${height}%;
                 z-index: ${widget.z_index || 1};
+                ${props.color ? `color: ${props.color};` : ''}
             `;
 
             switch (widget.type) {
