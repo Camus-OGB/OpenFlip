@@ -2,23 +2,29 @@
 
 **Open source alternative to Heyzine.** Transform your PDFs into interactive flipbooks with realistic page-turning effects. Self-hostable and free.
 
-![OpenFlip](https://img.shields.io/badge/version-1.0.0-purple) ![License](https://img.shields.io/badge/license-MIT-green)
+![OpenFlip](https://img.shields.io/badge/version-1.1.0-purple) ![License](https://img.shields.io/badge/license-MIT-green) ![Python](https://img.shields.io/badge/python-3.8+-blue) ![Docker](https://img.shields.io/badge/docker-ready-green)
 
-## Features
+## ✨ Features
 
 - 📤 **Drag & drop upload** with custom title input
-- 📖 **Hybrid reader** with multiple effects:
-  - **Flipbook** (turn.js) - realistic page turn
-  - **Slide** - horizontal sliding
-  - **Fade** - crossfade transition
-  - **Coverflow** - 3D carousel
-  - **Cards** - stacked cards effect
-- 🔍 **Zoom** in/out
-- ⌨️ **Keyboard & touch navigation** (swipe support)
-- 📱 **Responsive** - desktop, tablet, mobile
-- 🏠 **Gallery page** to browse all flipbooks
-- 🐳 **Docker-ready** - deploy in one command
-- 🔒 **Privacy-first** - your files stay on your server
+- 📖 **Hybrid reader** with multiple viewing modes:
+  - **Standard** (turn.js) - Realistic double-page flipbook effect
+  - **Coverflow** - 3D carousel view
+  - **Cards** - Stacked cards effect
+  - **Cube** - 3D cube transition
+  - **Slide/Fade** - Smooth crossfade transition
+- 🎯 **Smart navigation**:
+  - Click-based (left/right halves of page)
+  - Keyboard shortcuts (arrows, space, home/end)
+  - Navigation buttons in control bar
+  - One page advance at a time
+- 🔍 **Zoom** in/out (0.5x to 2x)
+- 🔗 **Interactive widgets** - Clickable links with visible text
+- 📱 **Fully responsive** - Desktop, tablet, mobile
+- 🎨 **Consistent display** - Fixed A4-like dimensions for all PDFs
+- 🏠 **Gallery** - Browse and manage all flipbooks
+- 🐳 **Docker-ready** - Deploy in one command
+- 🔒 **Privacy-first** - Your files stay on your server
 
 ## Quick Start
 
@@ -39,16 +45,35 @@ PORT=8000
 MAX_FILE_SIZE=52428800  # 50MB
 ```
 
+## Recent Improvements (v1.1.0)
+
+- ✨ Fixed A4 page dimensions for consistent display across all PDFs
+- 🎯 Improved navigation with click-based page turning
+- 🔘 Added prev/next buttons for easier navigation
+- 🔗 Links now display their text directly on flipbook pages
+- ⚡ Fixed Swiper navigation to advance exactly one page at a time
+- 🔊 Optimized audio system (flip-1.mp3, flip-4.mp3)
+- 📐 Better centering and responsive layout
+
 ## Keyboard Shortcuts
 
 | Key | Action |
 |-----|--------|
-| ← ↑ | Previous page |
-| → ↓ Space | Next page |
+| ← / ↑ | Previous page |
+| → / ↓ / Space | Next page |
 | Home | First page |
 | End | Last page |
-| + / - | Zoom in/out |
+| +/= | Zoom in |
+| - | Zoom out |
+| 0 | Reset zoom |
 | F | Fullscreen |
+| S | Toggle sound |
+
+## Mouse Navigation
+
+- **Left half of page** - Click to go to previous page
+- **Right half of page** - Click to go to next page
+- **Prev/Next buttons** - Use navigation buttons in control bar
 
 ## Docker Commands
 

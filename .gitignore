@@ -4,40 +4,78 @@ __pycache__/
 *$py.class
 *.so
 .Python
+*.egg
+*.egg-info/
+dist/
+build/
+
+# Virtual environments
 venv/
-.venv/
 env/
+.venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Environment files
 .env
 .env.local
-
-# Storage (fichiers générés)
-storage/uploads/
-storage/pages/
+.env.*.local
+*.env
 
 # IDE
 .idea/
 .vscode/
+.VS/
 *.swp
 *.swo
 *~
+*.iml
+.project
+.pydevproject
+.settings/
+*.sublime-workspace
 
 # OS
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
+
+# Generated storage files
+storage/uploads/*
+storage/pages/*
+!storage/uploads/.gitkeep
+!storage/pages/.gitkeep
+!storage/images/.gitkeep
 
 # Docker
 .docker/
+docker-compose.override.yml
 
-# Logs
+# Logs and debugging
 *.log
-
-# Tests
+*.logs
 .pytest_cache/
 .coverage
 htmlcov/
 .tox/
+.hypothesis/
 
-# Build
-dist/
-build/
-*.egg-info/
+# Node (if frontend build tools added)
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Temporary files
+*.tmp
+*.temp
+.tmp/
