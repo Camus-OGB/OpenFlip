@@ -1,6 +1,7 @@
 from sqlmodel import SQLModel, create_engine, Session
 from contextlib import contextmanager
 from typing import Generator
+import os
 
 from .config import settings
 
@@ -8,15 +9,37 @@ from .config import settings
 # CONFIGURATION DATABASE
 # ============================================================================
 
-DATABASE_URL = f"sqlite:///{settings.STORAGE_DIR}/openflip.db"
+# Détection automatique du mode Production vs Local
+database_url = os.getenv("DATABASE_URL")
+
+if database_url:
+    # Mode Production : utilise PostgreSQL via la variable DATABASE_URL
+    # Correction critique pour SQLAlchemy >= 2.0 : 
+    # Render fournit postgres://, mais SQLAlchemy requiert postgresql://
+    database_url = database_url.replace("postgres://", "postgresql://")
+    DATABASE_URL = database_url
+else:
+    # Mode Local : utilise SQLite
+    DATABASE_URL = f"sqlite:///{settings.STORAGE_DIR}/openflip.db"
+
+# Déterminer les arguments de connexion selon la base de données
+if database_url and "postgresql://" in DATABASE_URL:
+    # PostgreSQL
+    connect_args = {}
+    pool_pre_ping = True  # Vérifie la connexion avant chaque requête
+else:
+    # SQLite
+    connect_args = {
+        "check_same_thread": False,  # Permet l'acces multi-thread pour FastAPI
+        "timeout": 30  # Timeout de 30 secondes pour les locks
+    }
+    pool_pre_ping = False
 
 engine = create_engine(
     DATABASE_URL,
     echo=False,
-    connect_args={
-        "check_same_thread": False,  # Permet l'acces multi-thread pour FastAPI
-        "timeout": 30  # Timeout de 30 secondes pour les locks
-    }
+    connect_args=connect_args,
+    pool_pre_ping=pool_pre_ping
 )
 
 
