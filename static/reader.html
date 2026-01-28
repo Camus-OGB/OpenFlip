@@ -258,25 +258,7 @@
             user-select: none;
         }
 
-        /* Swiper Navigation */
-        .swiper-button-next,
-        .swiper-button-prev {
-            color: white;
-            background: rgba(79, 70, 229, 0.8);
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
-        }
-
-        .swiper-button-next:after,
-        .swiper-button-prev:after {
-            font-size: 18px;
-        }
-
-        .swiper-button-next:hover,
-        .swiper-button-prev:hover {
-            background: rgba(79, 70, 229, 1);
-        }
+        /* Swiper Navigation - DISABLED */
 
         .swiper-pagination-bullet {
             background: white;
@@ -958,14 +940,19 @@
 
                 // 5. Déterminer le mode d'affichage initial
                 // Supporter plusieurs formats de nom (viewMode, view_mode, mode)
-                const initialMode = this.styleConfig.viewMode
+                let initialMode = this.styleConfig.viewMode
                     || this.styleConfig.view_mode
                     || this.styleConfig.mode
                     || 'standard';
 
                 // Attendre que turn.js soit prêt si mode PageFlip
                 if (initialMode === 'standard') {
-                    await this.waitForTurnJS();
+                    try {
+                        await this.waitForTurnJS();
+                    } catch (e) {
+                        console.warn('[Reader] Fallback à Swiper au lieu de PageFlip:', e.message);
+                        initialMode = 'fade'; // Fallback to Swiper fade mode
+                    }
                 }
 
                 // Initialiser le moteur d'affichage
@@ -1001,12 +988,14 @@
         waitForTurnJS() {
             return new Promise((resolve, reject) => {
                 const timeout = setTimeout(() => {
-                    reject(new Error('turn.js non chargé après 10s'));
+                    console.warn('[Reader] ⚠️ turn.js non chargé après 10s - utiliser Swiper à la place');
+                    reject(new Error('turn.js non chargé - basculer vers Swiper'));
                 }, 10000);
 
                 const checkTurn = () => {
                     if (typeof $ !== 'undefined' && $.fn.turn) {
                         clearTimeout(timeout);
+                        console.log('[Reader] ✓ turn.js chargé avec succès');
                         resolve();
                     } else {
                         setTimeout(checkTurn, 100);
@@ -1458,13 +1447,13 @@
             pagination.className = 'swiper-pagination';
             swiper.appendChild(pagination);
 
-            const prevBtn = document.createElement('div');
-            prevBtn.className = 'swiper-button-prev';
-            swiper.appendChild(prevBtn);
-
-            const nextBtn = document.createElement('div');
-            nextBtn.className = 'swiper-button-next';
-            swiper.appendChild(nextBtn);
+            // Navigation buttons disabled - use control-bar buttons instead
+            // const prevBtn = document.createElement('div');
+            // prevBtn.className = 'swiper-button-prev';
+            // swiper.appendChild(prevBtn);
+            // const nextBtn = document.createElement('div');
+            // nextBtn.className = 'swiper-button-next';
+            // swiper.appendChild(nextBtn);
 
             swiperContainer.appendChild(swiper);
             container.appendChild(swiperContainer);
@@ -1486,10 +1475,11 @@
                     clickable: true,
                     dynamicBullets: true
                 },
-                navigation: {
-                    nextEl: '.swiper-button-next',
-                    prevEl: '.swiper-button-prev'
-                },
+                // Navigation buttons disabled - using control-bar buttons only
+                // navigation: {
+                //     nextEl: '.swiper-button-next',
+                //     prevEl: '.swiper-button-prev'
+                // },
                 on: {
                     slideChange: () => {
                         this.currentPage = this.engine.activeIndex;
