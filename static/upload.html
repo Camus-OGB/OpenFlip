@@ -474,10 +474,21 @@
                     // UPLOAD COMPLETE - WAITING FOR SERVER (CONVERSION)
                     // --------------------------------------------------------
                     this.xhr.upload.addEventListener('load', () => {
-                        this.progress = 100;
+                        this.progress = 90; // Rester à 90% jusqu'à la fin du serveur
                         this.isConverting = true;
                         this.statusTitle = 'Conversion en cours...';
                         this.statusMessage = 'Le serveur traite votre PDF. Cela peut prendre quelques instants.';
+
+                        // Progression simulée pendant la conversion (90% -> 99%)
+                        let simulatedProgress = 90;
+                        const progressInterval = setInterval(() => {
+                            if (this.isConverting && simulatedProgress < 99) {
+                                simulatedProgress += Math.random() * 3; // Augmenter de 0-3% aléatoirement
+                                this.progress = Math.min(Math.floor(simulatedProgress), 99);
+                            } else {
+                                clearInterval(progressInterval);
+                            }
+                        }, 800); // Mettre à jour tous les 800ms
                     });
 
                     // --------------------------------------------------------
@@ -485,6 +496,7 @@
                     // --------------------------------------------------------
                     this.xhr.addEventListener('load', () => {
                         this.isConverting = false;
+                        this.progress = 100; // Marquer comme 100% une fois la réponse reçue
 
                         if (this.xhr.status === 200) {
                             // SUCCESS
