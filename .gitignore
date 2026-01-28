@@ -48,6 +48,7 @@ Thumbs.db
 # Generated storage files
 storage/uploads/*
 storage/pages/*
+storage/images/*
 !storage/uploads/.gitkeep
 !storage/pages/.gitkeep
 !storage/images/.gitkeep
