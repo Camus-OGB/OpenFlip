@@ -661,6 +661,7 @@ async def get_reader_data(doc_id: str, session: Session = Depends(get_session)):
         pages_data.append({
             "page_num": page.page_num,
             "image_url": f"/pages/{page.image_path}",
+            "image_path": f"/pages/{page.image_path}",
             "width": page.width,
             "height": page.height,
             "widgets": [w.to_dict() for w in page.widgets]
@@ -673,3 +674,46 @@ async def get_reader_data(doc_id: str, session: Session = Depends(get_session)):
         "style": flipbook.style,
         "pages": pages_data
     }
+
+
+# ============================================================================
+# DEBUG - DIAGNOSTIQUE DU SERVEUR
+# ============================================================================
+
+@router.get("/api/debug/storage")
+async def debug_storage():
+    """
+    Endpoint de diagnostic pour vérifier que le stockage est accessible.
+    Retourne la structure des répertoires.
+    """
+    import os
+    from pathlib import Path
+    
+    debug_info = {
+        "storage_dir": str(settings.STORAGE_DIR),
+        "pages_dir": str(settings.PAGES_DIR),
+        "uploads_dir": str(settings.UPLOAD_DIR),
+        "storage_exists": settings.STORAGE_DIR.exists(),
+        "pages_exists": settings.PAGES_DIR.exists(),
+        "uploads_exists": settings.UPLOAD_DIR.exists(),
+        "pages_contents": [],
+        "uploads_contents": []
+    }
+    
+    # Lister les pages
+    if settings.PAGES_DIR.exists():
+        for doc_folder in settings.PAGES_DIR.iterdir():
+            if doc_folder.is_dir():
+                pages = list(doc_folder.glob("page_*.webp"))
+                debug_info["pages_contents"].append({
+                    "doc_id": doc_folder.name,
+                    "page_count": len(pages),
+                    "pages": [p.name for p in sorted(pages)][:5]  # Premier 5
+                })
+    
+    # Lister les uploads
+    if settings.UPLOAD_DIR.exists():
+        uploads = list(settings.UPLOAD_DIR.glob("*.pdf"))
+        debug_info["uploads_contents"] = [u.name for u in uploads]
+    
+    return debug_info
