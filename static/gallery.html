@@ -134,6 +134,13 @@
                             >
                                 <i class="fa-solid fa-eye text-sm"></i>
                             </a>
+                            <button
+                                @click="deleteFlipbook(flipbook.id)"
+                                class="w-9 h-9 bg-white/90 backdrop-blur-sm rounded-lg flex items-center justify-center text-slate-700 hover:bg-red-600 hover:text-white transition-colors shadow-lg"
+                                title="Supprimer"
+                            >
+                                <i class="fa-solid fa-trash text-sm"></i>
+                            </button>
                         </div>
 
                         <!-- Badge pages -->
@@ -335,6 +342,31 @@
                         month: 'short',
                         year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined
                     });
+                },
+
+                async deleteFlipbook(id) {
+                    if (!confirm('Êtes-vous sûr de vouloir supprimer ce flipbook ? Cette action est irréversible.')) {
+                        return;
+                    }
+
+                    try {
+                        const res = await fetch(`/api/documents/${id}`, {
+                            method: 'DELETE'
+                        });
+
+                        if (res.ok) {
+                            // Retirer le flipbook de la liste
+                            this.flipbooks = this.flipbooks.filter(f => f.id !== id);
+                            this.filterFlipbooks();
+                            console.log('Flipbook supprimé avec succès');
+                        } else {
+                            const error = await res.json().catch(() => ({ detail: 'Erreur lors de la suppression' }));
+                            alert('Erreur: ' + (error.detail || 'Impossible de supprimer le flipbook'));
+                        }
+                    } catch (err) {
+                        console.error('Erreur suppression:', err);
+                        alert('Erreur: ' + err.message);
+                    }
                 }
             }
         }
