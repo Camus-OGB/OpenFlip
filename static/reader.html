@@ -1616,7 +1616,9 @@
                 const currentPage = book.turn('page');
                 if (currentPage < this.totalPages) {
                     book.turn('page', currentPage + 1);
+                    this.currentPage = currentPage; // Mise à jour de this.currentPage
                     this.playPageFlipSound();
+                    this.updateUI();
                 }
             } else if (this.engineType === 'swiper' && this.engine) {
                 this.engine.slideNext();
@@ -1631,7 +1633,9 @@
                 const currentPage = book.turn('page');
                 if (currentPage > 1) {
                     book.turn('page', currentPage - 1);
+                    this.currentPage = currentPage - 2; // Mise à jour de this.currentPage (0-indexed)
                     this.playPageFlipSound();
+                    this.updateUI();
                 }
             } else if (this.engineType === 'swiper' && this.engine) {
                 this.engine.slidePrev();
