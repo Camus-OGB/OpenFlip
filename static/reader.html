@@ -1103,6 +1103,29 @@
                 }
             });
 
+            // Add click handlers for left/right halves of screen to navigate pages
+            const swiperElement = document.querySelector('.swiper');
+            if (swiperElement) {
+                swiperElement.addEventListener('click', (e) => {
+                    // Ignore clicks on pagination or widgets
+                    if (e.target.closest('.swiper-pagination') || e.target.closest('.widget-overlay') || e.target.closest('.book-widgets-overlay')) {
+                        return;
+                    }
+
+                    const rect = swiperElement.getBoundingClientRect();
+                    const clickX = e.clientX - rect.left;
+                    const midpoint = rect.width / 2;
+
+                    if (clickX < midpoint) {
+                        // Left side - previous page
+                        this.prevPage();
+                    } else {
+                        // Right side - next page
+                        this.nextPage();
+                    }
+                });
+            }
+
             // Add widgets for initial slide
             setTimeout(() => {
                 this.addWidgetsOverlay();
