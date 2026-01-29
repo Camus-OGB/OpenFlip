@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lecteur - OpenFlip</title>
 
-    <!-- Google Fonts - Inter -->
+    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -13,15 +13,14 @@
     <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
-    <!-- Turn.js Library - jQuery first, then Turn.js -->
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/gh/blasten/turn.js@master/turn.min.js"></script>
+    <!-- StPageFlip -->
+    <script src="https://cdn.jsdelivr.net/npm/page-flip@2.0.7/dist/js/page-flip.browser.min.js"></script>
 
-    <!-- Swiper.js Library -->
+    <!-- Swiper.js -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css">
     <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
 
-    <!-- Howler.js for Audio -->
+    <!-- Howler.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.4/howler.min.js"></script>
 
     <style>
@@ -31,26 +30,13 @@
             box-sizing: border-box;
         }
 
-        /* ================================================================ */
-        /* Z-INDEX HIERARCHY (LAYERING STRATEGY)                            */
-        /* ================================================================ */
-        /* z-index: 0    → .bg-layer (background image, fixed)             */
-        /* z-index: 1    → html, body (content layer)                      */
-        /* z-index: 10   → .container (main content area)                  */
-        /* z-index: 20   → #book (flipbook/pages)                          */
-        /* z-index: 100  → .header & .control-bar (UI controls)            */
-        /* ================================================================ */
-
         :root {
             --bg-image: none;
         }
 
-        /* ================================================================ */
-        /* BACKGROUND LAYER - ISOLATED & SEAMLESS                           */
-        /* ================================================================ */
         .bg-layer {
             position: fixed;
-            inset: 0;  /* top:0, right:0, bottom:0, left:0 */
+            inset: 0;
             z-index: 0;
             background-image: var(--bg-image);
             background-size: cover;
@@ -67,13 +53,8 @@
             font-family: 'Inter', system-ui, sans-serif;
             background: transparent;
             overflow: hidden;
-            position: relative;
-            z-index: 1;
         }
 
-        /* ================================================================ */
-        /* HEADER                                                          */
-        /* ================================================================ */
         .header {
             position: fixed;
             top: 0;
@@ -95,7 +76,6 @@
             display: flex;
             align-items: center;
             gap: 16px;
-            min-width: fit-content;
         }
 
         .header-logo {
@@ -152,27 +132,21 @@
             border-color: #4f46e5;
         }
 
-        /* ================================================================ */
-        /* MAIN CONTAINER - ABOVE BACKGROUND                               */
-        /* ================================================================ */
         .container {
             position: absolute;
             top: 64px;
             left: 0;
             right: 0;
-            bottom: 0;
+            bottom: 80px;
             display: none;
             align-items: center;
             justify-content: center;
-            padding: 40px 20px;
+            padding: 20px;
             overflow: hidden;
             background: transparent;
-            z-index: 10;  /* Above background, below controls */
-            width: auto !important;
-            height: auto !important;
+            z-index: 10;
         }
 
-        /* Reader Viewport */
         #reader-viewport {
             position: relative;
             width: 100%;
@@ -182,48 +156,39 @@
             justify-content: center;
         }
 
-        /* Turn.js Container */
-        .turn-container {
+        .pageflip-container {
             position: relative;
-            width: 100%;
-            height: 100%;
             display: flex;
             align-items: center;
             justify-content: center;
-            z-index: 20;  /* Above main container, below header */
+            z-index: 20;
         }
 
         #book {
             background: transparent;
-            box-shadow:
-                0 50px 100px rgba(0, 0, 0, 0.3),
-                0 25px 50px rgba(0, 0, 0, 0.2);
             z-index: 20;
-            position: relative;
         }
 
-        /* Pages du livre - Turn.js gère le display */
-        #book .my-page {
+        .stf__wrapper {
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1), 0 5px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .my-page {
             background: white;
             overflow: hidden;
-            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
-        #book .my-page img {
+        .my-page img {
             width: 100%;
             height: 100%;
-            display: block;
             object-fit: contain;
             user-select: none;
             pointer-events: none;
         }
 
-        /* Correction pour turn.js - les pages doivent avoir position absolute */
-        #book .turn-page {
-            background: white;
-        }
-
-        /* Swiper Container */
         .swiper-container {
             width: 100%;
             height: 100%;
@@ -239,26 +204,15 @@
             align-items: center;
             justify-content: center;
             background: transparent;
-            cursor: pointer;
-        }
-
-        .swiper-slide .page-content {
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
         }
 
         .swiper-slide img {
             max-width: 90vw;
             max-height: 80vh;
             object-fit: contain;
-            border-radius: 4px;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
             user-select: none;
         }
-
-        /* Swiper Navigation - DISABLED */
 
         .swiper-pagination-bullet {
             background: white;
@@ -269,15 +223,7 @@
             background: #4f46e5;
             opacity: 1;
         }
-        /* Swiper-specific styles - all modes use single page view */
-        .swiper-slide {
-            width: 100%;
-            height: 100%;
-        }
 
-        /* ================================================================ */
-        /* LOADING & ERROR STATES                                          */
-        /* ================================================================ */
         #loading {
             position: fixed;
             inset: 0;
@@ -333,9 +279,6 @@
             font-weight: 500;
         }
 
-        /* ================================================================ */
-        /* CONTROL BAR                                                     */
-        /* ================================================================ */
         .control-bar {
             position: fixed;
             bottom: 24px;
@@ -350,7 +293,7 @@
             align-items: center;
             gap: 10px;
             z-index: 100;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
         }
 
         .control-btn {
@@ -384,9 +327,6 @@
             background: rgba(255, 255, 255, 0.2);
         }
 
-        /* ================================================================ */
-        /* MODE DROPDOWN                                                   */
-        /* ================================================================ */
         .mode-dropdown {
             position: relative;
         }
@@ -440,7 +380,7 @@
             opacity: 0;
             visibility: hidden;
             transition: all 0.2s;
-            box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 -5px 15px rgba(0, 0, 0, 0.1);
         }
 
         .mode-dropdown.open .mode-dropdown-menu {
@@ -490,9 +430,6 @@
             opacity: 1;
         }
 
-        /* ================================================================ */
-        /* PROGRESS BAR                                                    */
-        /* ================================================================ */
         .progress-container {
             width: 120px;
             height: 6px;
@@ -508,7 +445,6 @@
             transition: width 0.3s ease;
         }
 
-        /* Zoom Display */
         .zoom-display {
             color: rgba(255, 255, 255, 0.8);
             font-size: 11px;
@@ -516,129 +452,27 @@
             text-align: center;
         }
 
-        /* ================================================================ */
-        /* WIDGETS                                                         */
-        /* ================================================================ */
-        .widgets-container {
-            position: absolute;
-            inset: 0;
-            overflow: hidden;
-            pointer-events: none;
-        }
-
-        .widget-overlay {
-            position: absolute;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            pointer-events: auto;
-        }
-
-        .widget-overlay.widget-link {
-            border: 2px solid transparent;
-            border-radius: 4px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .widget-overlay.widget-link:hover {
-            border-color: rgba(79, 70, 229, 0.6);
-            background: rgba(79, 70, 229, 0.1);
-        }
-
-        .widget-link-text {
-            color: inherit;
-            font-size: 12px;
-            font-weight: 500;
-            text-decoration: underline;
-            text-align: center;
-            padding: 4px 8px;
-            white-space: normal;
-            word-wrap: break-word;
-            pointer-events: none;
-        }
-
-        .widget-overlay.widget-video,
-        .widget-overlay.widget-audio {
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .widget-overlay.widget-video:hover,
-        .widget-overlay.widget-audio:hover {
-            background: rgba(0, 0, 0, 0.5);
-        }
-
-        .widget-overlay .widget-icon {
-            color: inherit;
-            font-size: 24px;
-            opacity: 0.8;
-        }
-
-        .widget-overlay:hover .widget-icon {
-            opacity: 1;
-        }
-
-        .widget-overlay.widget-hotspot {
-            border: 2px dashed rgba(255, 193, 7, 0.6);
-            border-radius: 4px;
-        }
-
-        .widget-overlay.widget-hotspot:hover {
-            background: rgba(255, 193, 7, 0.2);
-        }
-
-        /* ================================================================ */
-        /* RESPONSIVE                                                      */
-        /* ================================================================ */
         @media (max-width: 768px) {
             .header-title { display: none; }
-
             .control-bar {
                 flex-wrap: wrap;
                 max-width: calc(100vw - 32px);
                 padding: 8px 12px;
                 gap: 8px;
             }
-
             .control-btn {
                 width: 34px;
                 height: 34px;
                 font-size: 12px;
             }
-
             .control-divider { display: none; }
-
             .mode-dropdown-btn {
                 padding: 6px 10px;
                 font-size: 12px;
             }
-
             .progress-container { width: 80px; }
         }
 
-        @media (max-width: 480px) {
-            .control-bar {
-                bottom: 12px;
-                padding: 6px 10px;
-                gap: 6px;
-            }
-
-            .control-btn {
-                width: 32px;
-                height: 32px;
-            }
-
-            .zoom-display { display: none; }
-            .progress-container { width: 60px; }
-        }
-
-        /* ================================================================ */
-        /* FULLSCREEN                                                      */
-        /* ================================================================ */
         body.fullscreen {
             background: #000;
         }
@@ -657,7 +491,6 @@
 </head>
 <body>
 
-    <!-- Header -->
     <header class="header">
         <div class="header-left">
             <button class="back-btn" id="backBtn" title="Retour">
@@ -673,33 +506,27 @@
         <div class="header-title" id="docTitle"></div>
     </header>
 
-    <!-- Loading -->
     <div id="loading">
         <div class="spinner"></div>
         <p>Chargement du flipbook...</p>
     </div>
 
-    <!-- Background Layer - Isolated -->
     <div id="bg-layer" class="bg-layer"></div>
 
-    <!-- Main Container -->
     <div class="container" id="main-container">
         <div id="reader-viewport"></div>
     </div>
 
-    <!-- Control Bar -->
     <div class="control-bar">
-        <!-- Navigation Buttons -->
-        <button class="control-btn" id="prevBtn" title="Page précédente (←)">
+        <button class="control-btn" id="prevBtn" title="Page précédente">
             <i class="fa-solid fa-chevron-left"></i>
         </button>
-        <button class="control-btn" id="nextBtn" title="Page suivante (→)">
+        <button class="control-btn" id="nextBtn" title="Page suivante">
             <i class="fa-solid fa-chevron-right"></i>
         </button>
 
         <div class="control-divider"></div>
 
-        <!-- Mode Dropdown -->
         <div class="mode-dropdown" id="modeDropdown">
             <button class="mode-dropdown-btn" id="modeDropdownBtn">
                 <i class="fa-solid fa-book-open mode-icon" id="currentModeIcon"></i>
@@ -743,28 +570,27 @@
 
         <div class="control-divider"></div>
 
-        <button class="control-btn" id="zoomOutBtn" title="Zoom arrière (-)">
+        <button class="control-btn" id="zoomOutBtn" title="Zoom arrière">
             <i class="fa-solid fa-minus"></i>
         </button>
         <span class="zoom-display" id="zoomLevel">100%</span>
-        <button class="control-btn" id="zoomInBtn" title="Zoom avant (+)">
+        <button class="control-btn" id="zoomInBtn" title="Zoom avant">
             <i class="fa-solid fa-plus"></i>
         </button>
 
         <div class="control-divider"></div>
 
-        <button class="control-btn" id="soundBtn" title="Son (S)">
+        <button class="control-btn" id="soundBtn" title="Son">
             <i class="fa-solid fa-volume-high"></i>
         </button>
 
         <div class="control-divider"></div>
 
-        <button class="control-btn" id="fullscreenBtn" title="Plein écran (F)">
+        <button class="control-btn" id="fullscreenBtn" title="Plein écran">
             <i class="fa-solid fa-expand"></i>
         </button>
     </div>
 
-    <!-- Error -->
     <div id="error">
         <i class="fa-solid fa-circle-exclamation"></i>
         <h2>Document introuvable</h2>
@@ -773,41 +599,25 @@
     </div>
 
     <script>
-    // ========================================================================
-    // READER MANAGER CLASS - Engine Swap Architecture
-    // ========================================================================
-    // Ce lecteur de flipbook se connecte à l'API backend pour récupérer
-    // les données réelles. Aucune donnée simulée n'est utilisée.
-    // ========================================================================
     class ReaderManager {
         constructor() {
-            this.engine = null;          // Instance du moteur actuel (PageFlip ou Swiper)
-            this.engineType = null;      // 'pageflip' ou 'swiper'
+            this.engine = null;
+            this.engineType = null;
             this.currentMode = 'standard';
             this.currentPage = 0;
             this.totalPages = 0;
             this.docId = null;
-            this.pagesData = [];         // Données des pages depuis l'API
-            this.imageWidth = 595;       // Dimensions par défaut (A4)
-            this.imageHeight = 842;
+            this.pagesData = [];
 
-            // Bound page click handler for proper cleanup
-            this.boundPageClickHandler = this.handlePageClick.bind(this);
-
-            // Zoom
             this.zoomLevels = [0.5, 0.75, 1, 1.25, 1.5, 2];
             this.zoomIndex = 2;
             this.currentZoom = 1;
 
-            // Audio - Système Howler.js avec sons statiques
-            this.flipSounds = [];        // Instances Howl pré-chargées
+            this.flipSounds = [];
             this.isMuted = false;
-            this.soundEnabled = true;    // Configuration utilisateur depuis l'API
+            this.soundEnabled = true;
             this.audioInitialized = false;
-            this.currentAudio = null;    // Pour les widgets audio
-            this.displayMode = 'double'; // Mode d'affichage turn.js - Livre (1 page seule puis doubles)
 
-            // Configurations des modes d'affichage
             this.modes = {
                 standard: { engine: 'pageflip', icon: 'fa-book-open', label: 'Standard' },
                 coverflow: { engine: 'swiper', effect: 'coverflow', icon: 'fa-layer-group', label: 'Coverflow' },
@@ -816,58 +626,35 @@
                 fade: { engine: 'swiper', effect: 'fade', icon: 'fa-images', label: 'Slide / Fondu' }
             };
 
-            // Configurations des effets Swiper
             this.swiperEffects = {
                 coverflow: {
                     effect: 'coverflow',
                     grabCursor: true,
                     slidesPerView: 1,
-                    coverflowEffect: {
-                        rotate: 50,
-                        stretch: 0,
-                        depth: 100,
-                        modifier: 1,
-                        slideShadows: true
-                    }
+                    coverflowEffect: { rotate: 50, stretch: 0, depth: 100, modifier: 1, slideShadows: false }
                 },
                 cards: {
                     effect: 'cards',
                     grabCursor: true,
-                    cardsEffect: {
-                        slideShadows: true,
-                        perSlideOffset: 8,
-                        perSlideRotate: 2
-                    }
+                    cardsEffect: { slideShadows: false, perSlideOffset: 8, perSlideRotate: 2 }
                 },
                 cube: {
                     effect: 'cube',
                     grabCursor: true,
-                    cubeEffect: {
-                        shadow: true,
-                        slideShadows: true,
-                        shadowOffset: 20,
-                        shadowScale: 0.94
-                    }
+                    cubeEffect: { shadow: false, slideShadows: false, shadowOffset: 20, shadowScale: 0.94 }
                 },
                 fade: {
                     effect: 'fade',
-                    fadeEffect: {
-                        crossFade: true
-                    }
+                    fadeEffect: { crossFade: true }
                 }
             };
         }
 
-        // ====================================================================
-        // INITIALISATION - Point d'entrée principal
-        // ====================================================================
         async init() {
             try {
-                // 1. Récupérer l'ID depuis les paramètres URL (?id=...)
                 const urlParams = new URLSearchParams(window.location.search);
                 let docId = urlParams.get('id');
 
-                // Fallback: essayer de récupérer depuis le chemin URL (compatibilité)
                 if (!docId) {
                     const pathParts = window.location.pathname.split('/').filter(p => p);
                     docId = pathParts[pathParts.length - 1];
@@ -875,732 +662,459 @@
                 }
 
                 this.docId = docId;
+                if (!this.docId) throw new Error('ID du document manquant');
 
-                // Validation de l'ID
-                if (!this.docId) {
-                    throw new Error('ID du document manquant. Utilisez ?id=xxx dans l\'URL.');
-                }
+                console.log(`[Reader] Loading: ${this.docId}`);
 
-                console.log(`[Reader] Chargement du document: ${this.docId}`);
-
-                // 2. Appel à l'API backend pour récupérer les données du flipbook
                 let doc = null;
 
-                // D'abord, vérifier si des données de prévisualisation sont disponibles
                 try {
-                    const previewKey = `preview_${this.docId}`;
-                    const storedData = localStorage.getItem(previewKey);
+                    const storedData = localStorage.getItem(`preview_${this.docId}`);
                     if (storedData) {
                         doc = JSON.parse(storedData);
-                        console.log('[Reader] ✓ Données de prévisualisation chargées depuis localStorage');
-                        localStorage.removeItem(previewKey);
+                        localStorage.removeItem(`preview_${this.docId}`);
                     }
-                } catch (e) {
-                    console.warn('[Reader] Échec du chargement depuis localStorage:', e);
-                }
+                } catch (e) {}
 
-                // Sinon, appeler l'API pour récupérer les données réelles
                 if (!doc) {
-                    console.log('[Reader] Appel API: GET /api/reader/' + this.docId);
                     const res = await fetch(`/api/reader/${this.docId}`);
-
-                    if (!res.ok) {
-                        const status = res.status;
-                        if (status === 404) {
-                            throw new Error('Document introuvable. Vérifiez l\'ID.');
-                        } else if (status === 500) {
-                            throw new Error('Erreur serveur. Réessayez plus tard.');
-                        } else {
-                            throw new Error(`Erreur API (${status})`);
-                        }
-                    }
-
+                    if (!res.ok) throw new Error('Document introuvable');
                     doc = await res.json();
-                    console.log('[Reader] ✓ Données chargées depuis l\'API:', doc);
                 }
 
-                // 3. Extraire et mapper les propriétés de l'objet reçu
                 this.totalPages = doc.page_count || doc.pages?.length || 0;
                 this.pagesData = doc.pages || [];
                 this.styleConfig = doc.style || {};
                 this.isPreviewMode = !!window.opener;
 
-                // Validation des données
-                if (this.totalPages === 0) {
-                    throw new Error('Ce flipbook ne contient aucune page.');
-                }
+                if (this.totalPages === 0) throw new Error('Aucune page');
 
-                // Mettre à jour le titre de la page et l'en-tête
-                const title = doc.title || 'Flipbook sans titre';
+                const title = doc.title || 'Flipbook';
                 document.title = `${title} - OpenFlip`;
                 document.getElementById('docTitle').textContent = title;
 
-                // 4. Charger les dimensions depuis la première image
-                await this.loadImageDimensions();
+                let initialMode = this.styleConfig.viewMode || this.styleConfig.view_mode || this.styleConfig.mode || 'standard';
 
-                // 5. Déterminer le mode d'affichage initial
-                // Supporter plusieurs formats de nom (viewMode, view_mode, mode)
-                let initialMode = this.styleConfig.viewMode
-                    || this.styleConfig.view_mode
-                    || this.styleConfig.mode
-                    || 'standard';
+                if (initialMode === 'standard') await this.waitForStPageFlip();
 
-                // Attendre que turn.js soit prêt si mode PageFlip
-                if (initialMode === 'standard') {
-                    try {
-                        await this.waitForTurnJS();
-                    } catch (e) {
-                        console.warn('[Reader] Fallback à Swiper au lieu de PageFlip:', e.message);
-                        initialMode = 'fade'; // Fallback to Swiper fade mode
-                    }
-                }
-
-                // Initialiser le moteur d'affichage
                 await this.setMode(initialMode);
 
-                // 6. Afficher le conteneur principal
                 document.getElementById('loading').classList.add('hidden');
                 document.getElementById('main-container').style.display = 'flex';
 
-                // 7. Appliquer la configuration de style
                 this.applyStyleConfig();
-
-                // 8. Initialiser les événements et l'audio
                 this.setupEventListeners();
                 this.initAudio();
-
                 this.updateUI();
 
-                console.log('[Reader] ✓ Initialisation complète', {
-                    mode: initialMode,
-                    pages: this.totalPages,
-                    style: this.styleConfig,
-                    preview: this.isPreviewMode
-                });
+                console.log('[Reader] ✓ Ready');
 
             } catch (error) {
-                console.error('[Reader] Erreur d\'initialisation:', error);
+                console.error('[Reader] Error:', error);
                 this.showError(error.message);
             }
         }
 
-        // Attendre que turn.js soit chargé
-        waitForTurnJS() {
+        waitForStPageFlip() {
             return new Promise((resolve, reject) => {
-                const timeout = setTimeout(() => {
-                    console.warn('[Reader] ⚠️ turn.js non chargé après 10s - utiliser Swiper à la place');
-                    reject(new Error('turn.js non chargé - basculer vers Swiper'));
-                }, 10000);
-
-                const checkTurn = () => {
-                    if (typeof $ !== 'undefined' && $.fn.turn) {
+                const timeout = setTimeout(() => reject(new Error('StPageFlip timeout')), 10000);
+                const check = () => {
+                    if (typeof St !== 'undefined' && St.PageFlip) {
                         clearTimeout(timeout);
-                        console.log('[Reader] ✓ turn.js chargé avec succès');
                         resolve();
                     } else {
-                        setTimeout(checkTurn, 100);
+                        setTimeout(check, 100);
                     }
                 };
-                checkTurn();
+                check();
             });
         }
 
-        // Afficher un message d'erreur
         showError(message) {
             document.getElementById('loading').classList.add('hidden');
             const errorEl = document.getElementById('error');
             const errorMsg = errorEl.querySelector('p');
-            if (errorMsg && message) {
-                errorMsg.textContent = message;
-            }
+            if (errorMsg) errorMsg.textContent = message;
             errorEl.classList.add('show');
         }
 
         applyStyleConfig() {
             const style = this.styleConfig || {};
-            console.log('[Reader] Application de la configuration de style:', style);
-
             const bgLayer = document.getElementById('bg-layer');
-            const body = document.body;
 
-            // ----------------------------------------------------------------
-            // LAYER 1: Background (Couleur ou Image)
-            // ----------------------------------------------------------------
-            // Supporter plusieurs formats de nom (backgroundColor, background_color, bgColor)
-            const bgColor = style.backgroundColor
-                || style.background_color
-                || style.bgColor
-                || '#0f172a';
+            const bgColor = style.backgroundColor || style.background_color || style.bgColor || '#0f172a';
+            if (bgLayer) bgLayer.style.backgroundColor = bgColor;
 
-            if (bgLayer) {
-                bgLayer.style.backgroundColor = bgColor;
-            }
-
-            // Image de fond (backgroundImage, background_image, bgImage)
-            const bgImage = style.backgroundImage
-                || style.background_image
-                || style.bgImage
-                || null;
-
+            const bgImage = style.backgroundImage || style.background_image || style.bgImage;
             if (bgImage && bgLayer) {
-                console.log('[Reader] Application de l\'image de fond:', bgImage);
                 document.documentElement.style.setProperty('--bg-image', `url(${bgImage})`);
                 bgLayer.style.backgroundImage = `url(${bgImage})`;
-            } else {
-                document.documentElement.style.setProperty('--bg-image', 'none');
-                if (bgLayer) bgLayer.style.backgroundImage = 'none';
             }
 
-            // ----------------------------------------------------------------
-            // LAYER 2: UI Controls (TopBar, Navigation, etc.)
-            // ----------------------------------------------------------------
-
-            // Contrôles de navigation
-            const navControls = document.querySelector('.nav-controls');
-            const showNav = style.showNavigation !== false && style.show_navigation !== false;
-            if (navControls) {
-                navControls.style.display = showNav ? 'flex' : 'none';
-            }
-
-            // Barre de progression
-            const progressContainer = document.querySelector('.progress-container');
-            const showProgress = style.showProgressBar !== false && style.show_progress_bar !== false;
-            if (progressContainer) {
-                progressContainer.style.display = showProgress ? 'block' : 'none';
-            }
-
-            // Contrôles de zoom
-            const zoomControls = document.querySelectorAll('#zoomOutBtn, #zoomInBtn, .zoom-display');
-            const allowZoom = style.allowZoom !== false && style.allow_zoom !== false;
-            zoomControls.forEach(el => {
-                el.style.display = allowZoom ? '' : 'none';
-            });
-
-            // Bouton plein écran
-            const fullscreenBtn = document.getElementById('fullscreenBtn');
-            const allowFullscreen = style.allowFullscreen !== false && style.allow_fullscreen !== false;
-            if (fullscreenBtn) {
-                fullscreenBtn.style.display = allowFullscreen ? '' : 'none';
-            }
-
-            // Bouton son - Gérer la configuration audio
-            const soundBtn = document.getElementById('soundBtn');
             this.soundEnabled = style.sound !== false && style.soundEnabled !== false;
-            if (soundBtn) {
-                // Masquer le bouton si le son est désactivé dans la config
-                if (!this.soundEnabled) {
-                    soundBtn.style.display = 'none';
-                    this.isMuted = true;
-                }
+            if (!this.soundEnabled) {
+                document.getElementById('soundBtn').style.display = 'none';
+                this.isMuted = true;
             }
-
-            // ----------------------------------------------------------------
-            // Logo personnalisé
-            // ----------------------------------------------------------------
-            const showLogo = style.showLogo || style.show_logo;
-            const logoUrl = style.logoUrl || style.logo_url || style.logo;
-            if (showLogo && logoUrl) {
-                console.log('[Reader] Ajout du logo:', logoUrl);
-                this.addLogo(logoUrl);
-            }
-
-            // ----------------------------------------------------------------
-            // Mode dropdown - Masquer si mode fixe
-            // ----------------------------------------------------------------
-            const modeDropdown = document.getElementById('modeDropdown');
-            const allowModeChange = style.allowModeChange !== false && style.allow_mode_change !== false;
-            if (modeDropdown && !allowModeChange) {
-                modeDropdown.style.display = 'none';
-            }
-
-            console.log('[Reader] ✓ Configuration de style appliquée');
         }
 
-        addLogo(logoUrl) {
-            const existing = document.getElementById('reader-logo');
-            if (existing) existing.remove();
-
-            const logo = document.createElement('img');
-            logo.id = 'reader-logo';
-            logo.src = logoUrl;
-            logo.alt = 'Logo';
-            logo.style.cssText = 'position:fixed;top:80px;left:24px;height:40px;width:auto;z-index:50;object-fit:contain;';
-            document.body.appendChild(logo);
-        }
-
-        async loadImageDimensions() {
-            // Depuis le changement vers dimensionnement fixe (A4), on n'a plus besoin
-            // de charger les dimensions originales du PDF. On utilise juste les dimensions A4 fixes.
-            console.log('[Reader] Utilisation des dimensions A4 fixes (595x842px)');
-            this.setContainerDimensions();
-        }
-
-        setContainerDimensions() {
-            // Espace disponible basé sur le VIEWPORT
-            const availableHeight = window.innerHeight - 64 - 120; // header + control bar + padding
-            const availableWidth = window.innerWidth - 100; // padding horizontal
-
-            // Utiliser une dimension fixe moyenne (A4-like) au lieu des dimensions du PDF
-            // Cela garantit un dimensionnement cohérent et modéré pour tous les documents
-            const fixedPageWidth = 595;  // A4 width in pixels (~210mm)
-            const fixedPageHeight = 842; // A4 height in pixels (~297mm)
-            const pageAspectRatio = fixedPageWidth / fixedPageHeight;
-            
-            const isBookMode = this.engineType === 'pageflip';
-
-            // En mode livre double, le ratio est 2x celui d'une page
-            const contentAspectRatio = isBookMode ? (pageAspectRatio * 2) : pageAspectRatio;
-
-            // Calculer les dimensions optimales pour remplir le viewport
-            let containerWidth, containerHeight;
-
-            if (availableWidth / availableHeight > contentAspectRatio) {
-                // Limité par la hauteur
-                containerHeight = availableHeight;
-                containerWidth = containerHeight * contentAspectRatio;
-            } else {
-                // Limité par la largeur
-                containerWidth = availableWidth;
-                containerHeight = containerWidth / contentAspectRatio;
-            }
-
-            // Arrondir
-            containerWidth = Math.floor(containerWidth);
-            containerHeight = Math.floor(containerHeight);
-
-            // Note: On n'applique pas les dimensions au conteneur principal (.container)
-            // car celui-ci utilise flexbox pour centrer. Les dimensions vont aux viewports internes.
-
-            // Appliquer au conteneur turn.js
-            const turnContainer = document.querySelector('.turn-container');
-            if (turnContainer) {
-                turnContainer.style.width = containerWidth + 'px';
-                turnContainer.style.height = containerHeight + 'px';
-            }
-
-            // Redimensionner le livre turn.js avec la méthode size()
-            if (isBookMode && this.engine) {
-                try {
-                    const $book = $('#book');
-                    if ($book.data('turn')) {
-                        $book.turn('size', containerWidth, containerHeight);
-                        console.log(`[Reader] ✓ Livre redimensionné: ${containerWidth}x${containerHeight}px`);
-                    }
-                } catch (e) {
-                    console.warn('[Reader] Erreur redimensionnement turn.js:', e);
-                }
-            }
-
-            // Appliquer au conteneur Swiper
-            const swiperContainer = document.querySelector('.swiper-container');
-            if (swiperContainer) {
-                swiperContainer.style.width = containerWidth + 'px';
-                swiperContainer.style.height = containerHeight + 'px';
-            }
-
-            console.log(`[Reader] ✓ Dimensions viewport: ${containerWidth}x${containerHeight}px`);
-        }
-
-        // ====================================================================
-        // MODE SWITCHING (Engine Swap)
-        // ====================================================================
         async setMode(modeName) {
             const modeConfig = this.modes[modeName];
             if (!modeConfig) return;
 
-            // Save current page
             const savedPage = this.currentPage;
-
-            // Destroy current engine
             this.destroyEngine();
 
-            // Clear viewport
             const viewport = document.getElementById('reader-viewport');
             viewport.innerHTML = '';
 
-            // Update mode
             this.currentMode = modeName;
             this.engineType = modeConfig.engine;
 
-            // Build new engine
             if (modeConfig.engine === 'pageflip') {
                 await this.buildPageFlip(viewport);
             } else {
                 await this.buildSwiper(viewport, modeConfig.effect);
             }
 
-            // Restore page
             this.goToPage(savedPage);
-
-            // Update dropdown UI
             this.updateModeDropdown();
             this.updateUI();
-
-            console.log(`[Reader] Mode changé: ${modeName}`);
         }
 
         destroyEngine() {
             if (!this.engine) return;
-
             try {
-                if (this.engineType === 'pageflip') {
-                    this.engine.destroy();
-                } else if (this.engineType === 'swiper') {
-                    this.engine.destroy(true, true);
-                }
-            } catch (e) {
-                console.warn('[Reader] Erreur destruction moteur:', e);
-            }
-
+                if (this.engineType === 'pageflip') this.engine.destroy();
+                else if (this.engineType === 'swiper') this.engine.destroy(true, true);
+            } catch (e) {}
             this.engine = null;
         }
 
-        // ====================================================================
-        // PAGEFLIP ENGINE
-        // ====================================================================
         async buildPageFlip(container) {
-            console.log('[Reader] Construction du moteur PageFlip (turn.js)...');
-            console.log('[Reader] jQuery disponible:', typeof $ !== 'undefined');
-            console.log('[Reader] Turn.js disponible:', typeof $.fn?.turn !== 'undefined');
+            console.log('[Reader] Building StPageFlip...');
             
-            // Create structure
             const wrapper = document.createElement('div');
-            wrapper.className = 'turn-container';
-            wrapper.id = 'turn-wrapper';
+            wrapper.className = 'pageflip-container';
 
             const book = document.createElement('div');
             book.id = 'book';
-
-            // Créer les pages pour turn.js
-            // Utiliser des dimensions fixes (A4-like) pour un dimensionnement cohérent
-            const pageWidth = 595;  // A4 width in pixels (~210mm)
-            const pageHeight = 842; // A4 height in pixels (~297mm)
-
-            console.log(`[Reader] Création de ${this.totalPages} pages (${pageWidth}x${pageHeight}px chacune - dimensions A4 fixes)`);
-
-            for (let i = 0; i < this.totalPages; i++) {
-                const pageData = this.pagesData[i] || {};
-                const pageNum = pageData.page_num || (i + 1);
-
-                const page = document.createElement('div');
-                page.className = 'my-page';
-                page.dataset.pageNum = pageNum;
-                // Dimensions explicites pour turn.js
-                page.style.width = pageWidth + 'px';
-                page.style.height = pageHeight + 'px';
-
-                // Image de la page
-                const img = document.createElement('img');
-                img.src = pageData.image_url
-                    || pageData.image_path
-                    || `/pages/${this.docId}/page_${pageNum}.webp`;
-                img.alt = `Page ${pageNum}`;
-                img.style.cssText = 'width: 100%; height: 100%; object-fit: contain; display: block;';
-                img.draggable = false;
-                page.appendChild(img);
-
-                // Conteneur de widgets (positionné au-dessus de l'image)
-                const widgetsContainer = this.createWidgetsContainer(pageData);
-                if (widgetsContainer.children.length > 0) {
-                    widgetsContainer.style.cssText = 'position: absolute; inset: 0; pointer-events: none;';
-                    page.style.position = 'relative';
-                    page.appendChild(widgetsContainer);
-                }
-
-                book.appendChild(page);
-            }
-
             wrapper.appendChild(book);
             container.appendChild(wrapper);
 
-            // Initialiser turn.js avec gestion d'erreur
-            try {
-                console.log('[Reader] Initialisation de turn.js...');
+            // Calculate optimal dimensions
+            const viewportHeight = window.innerHeight - 64 - 150;
+            const viewportWidth = window.innerWidth - 200;
 
-                // Calculer les dimensions optimales basées sur le VIEWPORT (pas le PDF)
-                const availableHeight = window.innerHeight - 64 - 120; // header + control bar + padding
-                const availableWidth = window.innerWidth - 100; // padding horizontal
-
-                // Ratio d'aspect avec dimensions fixes (A4-like)
-                const fixedPageWidth = 595;  // A4 width in pixels (~210mm)
-                const fixedPageHeight = 842; // A4 height in pixels (~297mm)
-                const pageAspectRatio = fixedPageWidth / fixedPageHeight;
-
-                // Mode d'affichage: double = livre classique (2 pages côte à côte)
-                this.displayMode = 'double';
-
-                // En mode double, le livre fait 2 pages de large
-                // Calculer les dimensions optimales pour remplir l'écran
-                const bookAspectRatio = (pageAspectRatio * 2); // ratio du livre ouvert
-
-                let bookWidth, bookHeight;
-
-                // Adapter au viewport tout en respectant le ratio
-                if (availableWidth / availableHeight > bookAspectRatio) {
-                    // Limité par la hauteur
-                    bookHeight = availableHeight;
-                    bookWidth = bookHeight * bookAspectRatio;
-                } else {
-                    // Limité par la largeur
-                    bookWidth = availableWidth;
-                    bookHeight = bookWidth / bookAspectRatio;
-                }
-
-                // Arrondir pour éviter les problèmes de rendu
-                bookWidth = Math.floor(bookWidth);
-                bookHeight = Math.floor(bookHeight);
-
-                // Définir explicitement les dimensions CSS du livre AVANT l'init turn.js
-                book.style.width = bookWidth + 'px';
-                book.style.height = bookHeight + 'px';
-
-                console.log(`[Reader] Mode: ${this.displayMode}, Dimensions livre: ${bookWidth}x${bookHeight}px (viewport-based), Pages: ${this.totalPages}`);
-
-                $(book).turn({
-                    width: bookWidth,
-                    height: bookHeight,
-                    autoCenter: true,
-                    acceleration: true,
-                    gradients: true,
-                    elevation: 50,
-                    duration: 600,
-                    display: this.displayMode,
-                    direction: 'ltr',
-                    when: {
-                        turning: (e, page, view) => {
-                            console.log(`[Reader] Tournant vers page ${page}`);
-                        },
-                        turned: (e, page, view) => {
-                            this.currentPage = page - 1;
-                            this.playPageFlipSound();
-                            this.updateUI();
-                        }
-                    }
-                });
-
-                console.log(`[Reader] Mode d'affichage: ${this.displayMode}`);
-
-                this.engine = $(book).data('turn');
-                console.log('[Reader] ✓ turn.js initialisé avec succès');
-            } catch (error) {
-                console.error('[Reader] Erreur d\'initialisation turn.js:', error);
-                throw error;
+            const pageAspectRatio = 595 / 842; // A4
+            
+            let bookHeight = Math.min(viewportHeight, 1000);
+            let bookWidth = bookHeight * pageAspectRatio * 2;
+            
+            if (bookWidth > viewportWidth) {
+                bookWidth = viewportWidth;
+                bookHeight = bookWidth / (pageAspectRatio * 2);
             }
 
-            // Appliquer les dimensions du conteneur
-            this.setContainerDimensions();
+            bookWidth = Math.floor(bookWidth);
+            bookHeight = Math.floor(bookHeight);
+            const pageWidth = Math.floor(bookWidth / 2);
 
-            // Configurer les listeners pour les clics sur les pages
-            this.setupPageClickListeners();
+            console.log(`[Reader] Size: ${bookWidth}x${bookHeight} (page: ${pageWidth}x${bookHeight})`);
+
+            try {
+                this.engine = new St.PageFlip(book, {
+                    width: pageWidth,
+                    height: bookHeight,
+                    size: 'fixed',
+                    minWidth: 315,
+                    maxWidth: 2000,
+                    minHeight: 400,
+                    maxHeight: 1600,
+                    showCover: false,
+                    mobileScrollSupport: false,
+                    swipeDistance: 30,
+                    clickEventForward: true,
+                    usePortrait: false,
+                    startPage: 0,
+                    drawShadow: true,
+                    flippingTime: 600,
+                    useMouseEvents: true,
+                    autoSize: false,
+                    maxShadowOpacity: 0.5,
+                    showPageCorners: true,
+                    disableFlipByClick: false
+                });
+
+                // Load images into PageFlip
+                const imageUrls = this.pagesData.map(pageData => 
+                    pageData.image_url || pageData.image_path || `/pages/${this.docId}/page_${pageData.page_num || (this.pagesData.indexOf(pageData) + 1)}.webp`
+                );
+                this.engine.loadFromImages(imageUrls);
+
+                // Add widgets after a short delay to ensure PageFlip is ready
+                setTimeout(() => {
+                    this.addWidgetsOverlay();
+                }, 100);
+
+                this.engine.on('flip', (e) => {
+                    this.currentPage = e.data;
+                    this.addWidgetsOverlay();
+                    this.playPageFlipSound();
+                    this.updateUI();
+                });
+
+                console.log('[Reader] ✓ StPageFlip ready');
+
+            } catch (error) {
+                console.error('[Reader] StPageFlip error:', error);
+                throw error;
+            }
         }
 
-        // ====================================================================
-        // SWIPER ENGINE
-        // ====================================================================
+        addWidgetsOverlay() {
+            // Remove existing widgets overlay
+            const oldOverlay = document.querySelector('.book-widgets-overlay');
+            if (oldOverlay) oldOverlay.remove();
+
+            // Get current page data
+            const pageData = this.pagesData[this.currentPage];
+            console.log('[Widgets] Page:', this.currentPage, 'Data:', pageData);
+            if (!pageData || !pageData.widgets || pageData.widgets.length === 0) {
+                console.log('[Widgets] No widgets for this page');
+                return;
+            }
+
+            console.log('[Widgets] Found', pageData.widgets.length, 'widgets');
+
+            // Create overlay
+            const overlay = document.createElement('div');
+            overlay.className = 'book-widgets-overlay';
+            overlay.style.cssText = `
+                position: fixed;
+                pointer-events: none;
+                z-index: 30;
+            `;
+
+            let pageWidth, pageHeight, overlayLeft, overlayTop;
+
+            if (this.engineType === 'pageflip') {
+                // Get book position and dimensions for PageFlip
+                const book = document.getElementById('book');
+                const wrapper = document.querySelector('.pageflip-container');
+                console.log('[Widgets] Book:', book, 'Wrapper:', wrapper);
+                if (!book || !wrapper) {
+                    console.log('[Widgets] No book or wrapper found');
+                    return;
+                }
+                
+                const bookRect = book.getBoundingClientRect();
+                console.log('[Widgets] BookRect:', bookRect);
+                
+                // Each page is half the width
+                pageWidth = bookRect.width / 2;
+                pageHeight = bookRect.height;
+                overlayLeft = bookRect.left;
+                overlayTop = bookRect.top;
+                
+                // Position overlay to match the book
+                overlay.style.left = bookRect.left + 'px';
+                overlay.style.top = bookRect.top + 'px';
+                overlay.style.width = bookRect.width + 'px';
+                overlay.style.height = bookRect.height + 'px';
+            } else if (this.engineType === 'swiper') {
+                // Get active slide position and dimensions for Swiper
+                const activeSlide = document.querySelector('.swiper-slide-active img');
+                const swiperContainer = document.querySelector('.swiper-container');
+                console.log('[Widgets] Active slide:', activeSlide, 'Container:', swiperContainer);
+                if (!activeSlide || !swiperContainer) {
+                    console.log('[Widgets] No active slide or container found');
+                    return;
+                }
+                
+                const slideRect = activeSlide.getBoundingClientRect();
+                const containerRect = swiperContainer.getBoundingClientRect();
+                console.log('[Widgets] SlideRect:', slideRect);
+                
+                pageWidth = slideRect.width;
+                pageHeight = slideRect.height;
+                overlayLeft = slideRect.left;
+                overlayTop = slideRect.top;
+                
+                // Position overlay to match the slide
+                overlay.style.left = slideRect.left + 'px';
+                overlay.style.top = slideRect.top + 'px';
+                overlay.style.width = slideRect.width + 'px';
+                overlay.style.height = slideRect.height + 'px';
+            } else {
+                return;
+            }
+
+            pageData.widgets.forEach((widget, idx) => {
+                const widgetEl = document.createElement('div');
+                widgetEl.className = 'widget-overlay';
+                widgetEl.style.cssText = `
+                    position: absolute;
+                    pointer-events: auto;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 11px;
+                    font-weight: 500;
+                    color: white;
+                    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+                    overflow: hidden;
+                    text-align: center;
+                    padding: 4px 6px;
+                    border-radius: 6px;
+                    backdrop-filter: blur(2px);
+                    cursor: pointer;
+                    transition: all 0.2s ease;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+                    opacity: 0.65;
+                `;
+                
+                // Récupérer la géométrie et les props du widget
+                const geometry = widget.geometry || {};
+                const props = widget.props || {};
+                
+                const x = geometry.x || 0;
+                const y = geometry.y || 0;
+                const w = geometry.width || 100;
+                const h = geometry.height || 100;
+                
+                // Calculer les positions en pixels basées sur les coordonnées absolues
+                const left = (x / 595 * pageWidth);
+                const top = (y / 842 * pageHeight);
+                const width = (w / 595 * pageWidth);
+                const height = (h / 842 * pageHeight);
+
+                console.log('[Widget', idx + ']', widget.type, 'Props:', props, 'Geom:', geometry, '- Pos:', left, top, 'Size:', width, height);
+
+                widgetEl.style.left = left + 'px';
+                widgetEl.style.top = top + 'px';
+                widgetEl.style.width = width + 'px';
+                widgetEl.style.height = height + 'px';
+                
+                // Récupérer le texte du widget depuis les props
+                const widgetText = props.text || props.title || props.label || '';
+                const widgetUrl = props.url || '';
+                
+                // Ajouter effet hover
+                widgetEl.onmouseover = () => {
+                    widgetEl.style.opacity = '1';
+                    widgetEl.style.transform = 'scale(1.08)';
+                    widgetEl.style.boxShadow = '0 4px 12px rgba(0,0,0,0.25)';
+                };
+                widgetEl.onmouseout = () => {
+                    widgetEl.style.opacity = '0.65';
+                    widgetEl.style.transform = 'scale(1)';
+                    widgetEl.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
+                };
+                
+                // Couleurs plus subtiles avec opacité réduite
+                if (widget.type === 'link') {
+                    widgetEl.style.background = 'linear-gradient(135deg, rgba(59, 130, 246, 0.5) 0%, rgba(37, 99, 235, 0.5) 100%)';
+                    widgetEl.style.borderLeft = '3px solid rgba(59, 130, 246, 0.7)';
+                    widgetEl.innerHTML = `<a href="${widgetUrl}" target="${props.target || '_blank'}" style="display: flex; width: 100%; height: 100%; align-items: center; justify-content: center; text-decoration: none; color: white; font-size: 10px; font-weight: 500; gap: 3px; white-space: nowrap;"><span style="font-size: 12px;">🔗</span> <span>${widgetText || 'Lien'}</span></a>`;
+                } else if (widget.type === 'video') {
+                    widgetEl.style.background = 'linear-gradient(135deg, rgba(239, 68, 68, 0.5) 0%, rgba(220, 38, 38, 0.5) 100%)';
+                    widgetEl.style.borderLeft = '3px solid rgba(239, 68, 68, 0.7)';
+                    widgetEl.innerHTML = `<button onclick="window.open('${widgetUrl}', '_blank')" style="width: 100%; height: 100%; cursor: pointer; border: none; background: transparent; color: white; font-weight: 500; font-size: 10px; display: flex; align-items: center; justify-content: center; gap: 3px; white-space: nowrap;"><span style="font-size: 12px;">▶️</span> <span>${widgetText || 'Vidéo'}</span></button>`;
+                } else if (widget.type === 'image') {
+                    widgetEl.style.background = 'linear-gradient(135deg, rgba(34, 197, 94, 0.5) 0%, rgba(22, 163, 74, 0.5) 100%)';
+                    widgetEl.style.borderLeft = '3px solid rgba(34, 197, 94, 0.7)';
+                    widgetEl.innerHTML = `<img src="${widgetUrl}" style="width: 100%; height: 100%; object-fit: cover; cursor: pointer; display: block; border-radius: 3px;" onclick="window.open('${widgetUrl}', '_blank')" title="${widgetText}" />`;
+                } else if (widget.type === 'iframe') {
+                    widgetEl.style.background = 'linear-gradient(135deg, rgba(249, 115, 22, 0.5) 0%, rgba(234, 88, 12, 0.5) 100%)';
+                    widgetEl.style.borderLeft = '3px solid rgba(249, 115, 22, 0.7)';
+                    widgetEl.innerHTML = `<iframe src="${widgetUrl}" style="width: 100%; height: 100%; border: none; border-radius: 3px;"></iframe>`;
+                } else if (widget.type === 'audio') {
+                    widgetEl.style.background = 'linear-gradient(135deg, rgba(168, 85, 247, 0.5) 0%, rgba(147, 51, 234, 0.5) 100%)';
+                    widgetEl.style.borderLeft = '3px solid rgba(168, 85, 247, 0.7)';
+                    widgetEl.innerHTML = `<button onclick="new Howler.Howl({src: '${widgetUrl}'}).play()" style="width: 100%; height: 100%; cursor: pointer; border: none; background: transparent; color: white; font-weight: 500; font-size: 10px; display: flex; align-items: center; justify-content: center; gap: 3px; white-space: nowrap;"><span style="font-size: 12px;">🔊</span> <span>${widgetText || 'Audio'}</span></button>`;
+                } else if (widget.type === 'hotspot') {
+                    widgetEl.style.background = 'linear-gradient(135deg, rgba(236, 72, 153, 0.5) 0%, rgba(219, 39, 119, 0.5) 100%)';
+                    widgetEl.style.borderLeft = '3px solid rgba(236, 72, 153, 0.7)';
+                    widgetEl.innerHTML = `<div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 10px; font-weight: 500; gap: 3px; white-space: nowrap;" title="${widgetText}"><span style="font-size: 12px;">📍</span> <span>${widgetText || 'Hotspot'}</span></div>`;
+                }
+                
+                overlay.appendChild(widgetEl);
+            });
+
+            document.body.appendChild(overlay);
+            console.log('[Widgets] Overlay added to body');
+        }
+
         async buildSwiper(container, effect) {
-            // Create structure
             const swiperContainer = document.createElement('div');
             swiperContainer.className = 'swiper-container';
 
             const swiper = document.createElement('div');
             swiper.className = 'swiper';
-            swiper.id = 'swiper';
 
             const wrapper = document.createElement('div');
             wrapper.className = 'swiper-wrapper';
 
-            // Créer les slides
             for (let i = 0; i < this.totalPages; i++) {
                 const pageData = this.pagesData[i] || {};
                 const pageNum = pageData.page_num || (i + 1);
 
                 const slide = document.createElement('div');
                 slide.className = 'swiper-slide';
-                slide.dataset.pageNum = pageNum;
-
-                const content = document.createElement('div');
-                content.className = 'page-content';
 
                 const img = document.createElement('img');
-                // Supporter image_url ou image_path depuis l'API
-                img.src = pageData.image_url
-                    || pageData.image_path
-                    || `/pages/${this.docId}/page_${pageNum}.webp`;
+                img.src = pageData.image_url || pageData.image_path || `/pages/${this.docId}/page_${pageNum}.webp`;
                 img.alt = `Page ${pageNum}`;
-                // Lazy loading pour les pages au-delà de la 3ème
                 img.loading = pageNum <= 3 ? 'eager' : 'lazy';
                 img.draggable = false;
-                content.appendChild(img);
+                slide.appendChild(img);
 
-                // Ajouter les widgets interactifs
-                const widgetsContainer = this.createWidgetsContainer(pageData);
-                content.appendChild(widgetsContainer);
-
-                slide.appendChild(content);
                 wrapper.appendChild(slide);
             }
 
             swiper.appendChild(wrapper);
 
-            // Add navigation elements
             const pagination = document.createElement('div');
             pagination.className = 'swiper-pagination';
             swiper.appendChild(pagination);
 
-            // Navigation buttons disabled - use control-bar buttons instead
-            // const prevBtn = document.createElement('div');
-            // prevBtn.className = 'swiper-button-prev';
-            // swiper.appendChild(prevBtn);
-            // const nextBtn = document.createElement('div');
-            // nextBtn.className = 'swiper-button-next';
-            // swiper.appendChild(nextBtn);
-
             swiperContainer.appendChild(swiper);
             container.appendChild(swiperContainer);
 
-            // Get effect config
             const effectConfig = this.swiperEffects[effect] || {};
 
-            // Base Swiper config
-            const swiperConfig = {
+            this.engine = new Swiper('.swiper', {
                 ...effectConfig,
                 speed: 800,
                 keyboard: { enabled: true },
                 slidesPerView: 1,
-                slidesPerGroup: 1,
-                loop: false,
-                loopAdditionalSlides: 0,
                 pagination: {
                     el: '.swiper-pagination',
                     clickable: true,
                     dynamicBullets: true
                 },
-                // Navigation buttons disabled - using control-bar buttons only
-                // navigation: {
-                //     nextEl: '.swiper-button-next',
-                //     prevEl: '.swiper-button-prev'
-                // },
                 on: {
                     slideChange: () => {
                         this.currentPage = this.engine.activeIndex;
+                        this.addWidgetsOverlay();
                         this.updateUI();
                     }
                 }
-            };
-
-            // Initialize Swiper
-            this.engine = new Swiper('#swiper', swiperConfig);
-            
-            // Apply container dimensions
-            this.setContainerDimensions();
-
-            // Configure click handlers for page navigation
-            this.setupPageClickListeners();
-        }
-
-        // ====================================================================
-        // WIDGETS
-        // ====================================================================
-        createWidgetsContainer(pageData) {
-            const container = document.createElement('div');
-            container.className = 'widgets-container';
-
-            if (!pageData.widgets || pageData.widgets.length === 0) {
-                return container;
-            }
-
-            // Utiliser les dimensions fixes (A4) au lieu des dimensions du PDF
-            const fixedPageWidth = 595;
-            const fixedPageHeight = 842;
-
-            pageData.widgets.forEach(widget => {
-                const el = this.createWidgetElement(widget, fixedPageWidth, fixedPageHeight);
-                if (el) container.appendChild(el);
             });
 
-            return container;
+            // Add widgets for initial slide
+            setTimeout(() => {
+                this.addWidgetsOverlay();
+            }, 100);
         }
 
-        createWidgetElement(widget, pageWidth, pageHeight) {
-            const geo = widget.geometry || {};
-            const props = widget.props || {};
-
-            if (!geo.x && !geo.y && !geo.width && !geo.height) return null;
-
-            const el = document.createElement('div');
-            el.className = `widget-overlay widget-${widget.type}`;
-
-            const left = (geo.x / pageWidth * 100) || 0;
-            const top = (geo.y / pageHeight * 100) || 0;
-            const width = (geo.width / pageWidth * 100) || 10;
-            const height = (geo.height / pageHeight * 100) || 10;
-
-            el.style.cssText = `
-                left: ${left}%;
-                top: ${top}%;
-                width: ${width}%;
-                height: ${height}%;
-                z-index: ${widget.z_index || 1};
-                ${props.color ? `color: ${props.color};` : ''}
-            `;
-
-            switch (widget.type) {
-                case 'link':
-                    // Afficher le titre du lien s'il existe, sinon afficher l'icône de lien
-                    const linkText = props.title || props.text || '';
-                    if (linkText) {
-                        el.innerHTML = `<span class="widget-link-text">${linkText}</span>`;
-                    } else {
-                        el.innerHTML = '<i class="fa-solid fa-link widget-icon"></i>';
-                    }
-                    el.title = props.title || props.url || 'Lien';
-                    el.onclick = (e) => {
-                        e.stopPropagation();
-                        if (props.url) window.open(props.url, props.target || '_blank');
-                    };
-                    break;
-                case 'video':
-                    el.innerHTML = '<i class="fa-solid fa-play widget-icon"></i>';
-                    el.title = 'Voir la vidéo';
-                    el.onclick = (e) => {
-                        e.stopPropagation();
-                        if (props.url) this.openVideoModal(props.url);
-                    };
-                    break;
-                case 'audio':
-                    el.innerHTML = '<i class="fa-solid fa-volume-high widget-icon"></i>';
-                    el.title = 'Écouter';
-                    el.onclick = (e) => {
-                        e.stopPropagation();
-                        if (props.url) this.playAudio(props.url);
-                    };
-                    break;
-                case 'hotspot':
-                    el.title = props.title || 'Zone interactive';
-                    if (props.url) {
-                        el.onclick = (e) => {
-                            e.stopPropagation();
-                            window.open(props.url, props.target || '_blank');
-                        };
-                    }
-                    break;
-            }
-
-            return el;
-        }
-
-        // ====================================================================
-        // NAVIGATION
-        // ====================================================================
         goToPage(index) {
             if (index < 0 || index >= this.totalPages) return;
-
             this.currentPage = index;
 
             if (this.engineType === 'pageflip' && this.engine) {
-                // turn.js uses 1-based page numbers
-                const book = $('#book');
-                book.turn('page', index + 1);
+                this.engine.turnToPage(index);
             } else if (this.engineType === 'swiper' && this.engine) {
                 this.engine.slideTo(index, 0);
             }
@@ -1609,85 +1123,21 @@
         }
 
         nextPage() {
-            if (this.currentPage >= this.totalPages - 1) return;
-
             if (this.engineType === 'pageflip' && this.engine) {
-                const book = $('#book');
-                const currentPage = book.turn('page');
-                if (currentPage < this.totalPages) {
-                    book.turn('page', currentPage + 1);
-                    this.currentPage = currentPage; // Mise à jour de this.currentPage
-                    this.playPageFlipSound();
-                    this.updateUI();
-                }
+                this.engine.flipNext();
             } else if (this.engineType === 'swiper' && this.engine) {
                 this.engine.slideNext();
             }
         }
 
         prevPage() {
-            if (this.currentPage <= 0) return;
-
             if (this.engineType === 'pageflip' && this.engine) {
-                const book = $('#book');
-                const currentPage = book.turn('page');
-                if (currentPage > 1) {
-                    book.turn('page', currentPage - 1);
-                    this.currentPage = currentPage - 2; // Mise à jour de this.currentPage (0-indexed)
-                    this.playPageFlipSound();
-                    this.updateUI();
-                }
+                this.engine.flipPrev();
             } else if (this.engineType === 'swiper' && this.engine) {
                 this.engine.slidePrev();
             }
         }
 
-        // ====================================================================
-        // PAGE CLICK NAVIGATION
-        // ====================================================================
-        handlePageClick(e) {
-            // Ignorer les clics sur les éléments interactifs (widgets, liens, etc)
-            if (e.target.tagName === 'A' || e.target.tagName === 'BUTTON' || 
-                e.target.closest('.widget-overlay') || e.target.closest('button')) {
-                return;
-            }
-
-            // Arrêter la propagation du clic pour éviter les doublons
-            e.stopPropagation();
-
-            // Déterminer si on clique sur la moitié gauche ou droite
-            const rect = e.currentTarget.getBoundingClientRect();
-            const clickX = e.clientX - rect.left;
-            const midpoint = rect.width / 2;
-
-            if (clickX < midpoint) {
-                // Clic sur la moitié gauche = page précédente
-                this.prevPage();
-            } else {
-                // Clic sur la moitié droite = page suivante
-                this.nextPage();
-            }
-        }
-
-        setupPageClickListeners() {
-            // Pour le mode PageFlip
-            const book = document.getElementById('book');
-            if (book) {
-                book.removeEventListener('click', this.boundPageClickHandler);
-                book.addEventListener('click', this.boundPageClickHandler);
-            }
-
-            // Pour le mode Swiper
-            const swiper = document.getElementById('swiper');
-            if (swiper) {
-                swiper.removeEventListener('click', this.boundPageClickHandler);
-                swiper.addEventListener('click', this.boundPageClickHandler);
-            }
-        }
-
-        // ====================================================================
-        // ZOOM
-        // ====================================================================
         zoomIn() {
             if (this.zoomIndex < this.zoomLevels.length - 1) {
                 this.zoomIndex++;
@@ -1702,59 +1152,35 @@
             }
         }
 
-        resetZoom() {
-            this.zoomIndex = 2;
-            this.applyZoom();
-        }
-
         applyZoom() {
             this.currentZoom = this.zoomLevels[this.zoomIndex];
             const viewport = document.getElementById('reader-viewport');
             viewport.style.transform = `scale(${this.currentZoom})`;
-            viewport.style.transformOrigin = 'center center';
 
             document.getElementById('zoomLevel').textContent = Math.round(this.currentZoom * 100) + '%';
             document.getElementById('zoomOutBtn').disabled = this.zoomIndex <= 0;
             document.getElementById('zoomInBtn').disabled = this.zoomIndex >= this.zoomLevels.length - 1;
         }
 
-        // ====================================================================
-        // UI UPDATES
-        // ====================================================================
         updateUI() {
             const percentage = Math.round(((this.currentPage + 1) / this.totalPages) * 100);
             document.getElementById('progressBar').style.width = percentage + '%';
 
-            // Update navigation button states
-            const prevBtn = document.getElementById('prevBtn');
-            const nextBtn = document.getElementById('nextBtn');
-            
-            if (prevBtn) {
-                prevBtn.disabled = this.currentPage <= 0;
-            }
-            if (nextBtn) {
-                nextBtn.disabled = this.currentPage >= this.totalPages - 1;
-            }
+            document.getElementById('prevBtn').disabled = this.currentPage <= 0;
+            document.getElementById('nextBtn').disabled = this.currentPage >= this.totalPages - 1;
         }
 
         updateModeDropdown() {
             const modeConfig = this.modes[this.currentMode];
-
-            // Update button
             document.getElementById('currentModeIcon').className = `fa-solid ${modeConfig.icon} mode-icon`;
             document.getElementById('currentModeLabel').textContent = modeConfig.label;
 
-            // Update options
             document.querySelectorAll('.mode-option').forEach(opt => {
                 opt.classList.toggle('active', opt.dataset.mode === this.currentMode);
             });
         }
 
-        // ====================================================================
-        // EVENT LISTENERS
-        // ====================================================================
         setupEventListeners() {
-            // Mode dropdown
             const dropdown = document.getElementById('modeDropdown');
             const dropdownBtn = document.getElementById('modeDropdownBtn');
 
@@ -1763,70 +1189,33 @@
                 dropdown.classList.toggle('open');
             });
 
-            document.addEventListener('click', () => {
-                dropdown.classList.remove('open');
-            });
+            document.addEventListener('click', () => dropdown.classList.remove('open'));
 
             document.querySelectorAll('.mode-option').forEach(opt => {
                 opt.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    const mode = opt.dataset.mode;
-                    this.setMode(mode);
+                    this.setMode(opt.dataset.mode);
                     dropdown.classList.remove('open');
                 });
             });
 
-            // Back Button
-            const backBtn = document.getElementById('backBtn');
-            if (backBtn) {
-                backBtn.addEventListener('click', () => this.goBack());
-            }
-
-            // Sound
-            const soundBtn = document.getElementById('soundBtn');
-            if (soundBtn) {
-                soundBtn.addEventListener('click', () => this.toggleMute());
-            }
-
-            // Zoom
+            document.getElementById('backBtn').addEventListener('click', () => this.goBack());
+            document.getElementById('soundBtn').addEventListener('click', () => this.toggleMute());
             document.getElementById('zoomInBtn').addEventListener('click', () => this.zoomIn());
             document.getElementById('zoomOutBtn').addEventListener('click', () => this.zoomOut());
-
-            // Navigation buttons (prev/next)
             document.getElementById('prevBtn').addEventListener('click', () => this.prevPage());
             document.getElementById('nextBtn').addEventListener('click', () => this.nextPage());
-
-            // Page click navigation (left = prev, right = next)
-            this.setupPageClickListeners();
-
-            // Fullscreen
             document.getElementById('fullscreenBtn').addEventListener('click', () => this.toggleFullscreen());
             document.addEventListener('fullscreenchange', () => this.handleFullscreenChange());
-
-            // Navigation buttons - play sound on click
-            const prevBtn = document.querySelector('.swiper-button-prev, [data-action="prev"]');
-            const nextBtn = document.querySelector('.swiper-button-next, [data-action="next"]');
-            
-            if (prevBtn) {
-                prevBtn.addEventListener('click', () => this.playPageFlipSound());
-            }
-            if (nextBtn) {
-                nextBtn.addEventListener('click', () => this.playPageFlipSound());
-            }
-
-            // Keyboard
             document.addEventListener('keydown', (e) => this.handleKeyboard(e));
 
-            // Resize - Recalculer les dimensions lors du redimensionnement
-            let resizeTimeout;
             window.addEventListener('resize', () => {
-                clearTimeout(resizeTimeout);
-                resizeTimeout = setTimeout(() => {
-                    this.setContainerDimensions();
+                clearTimeout(this.resizeTimeout);
+                this.resizeTimeout = setTimeout(() => {
                     if (this.engineType === 'pageflip' && this.engine) {
-                        // Turn.js n'a pas de méthode resize, on recalcule juste le scale
+                        this.engine.updateState();
                     }
-                }, 150);
+                }, 200);
             });
         }
 
@@ -1845,14 +1234,6 @@
                     e.preventDefault();
                     this.nextPage();
                     break;
-                case 'Home':
-                    e.preventDefault();
-                    this.goToPage(0);
-                    break;
-                case 'End':
-                    e.preventDefault();
-                    this.goToPage(this.totalPages - 1);
-                    break;
                 case '+':
                 case '=':
                     e.preventDefault();
@@ -1861,10 +1242,6 @@
                 case '-':
                     e.preventDefault();
                     this.zoomOut();
-                    break;
-                case '0':
-                    e.preventDefault();
-                    this.resetZoom();
                     break;
                 case 'f':
                 case 'F':
@@ -1881,127 +1258,10 @@
 
         toggleFullscreen() {
             if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen().catch(console.error);
+                document.documentElement.requestFullscreen();
             } else {
                 document.exitFullscreen();
             }
-        }
-
-        goBack() {
-            // If opened from editor (preview mode), just close the window
-            if (this.isPreviewMode && window.opener) {
-                window.close();
-                return;
-            }
-
-            // Otherwise use history or go to gallery
-            if (history.length > 1) {
-                history.back();
-            } else {
-                window.location.href = '/gallery';
-            }
-        }
-
-        // ====================================================================
-        // AUDIO - Système Howler.js avec sons statiques
-        // ====================================================================
-        // Les fichiers sons sont stockés dans /static/sounds/
-        // 4 variantes pour créer de la variété lors du feuilletage
-        // ====================================================================
-        initAudio() {
-            // Ne pas initialiser si le son est désactivé dans la config
-            if (!this.soundEnabled) {
-                console.log('[Audio] Son désactivé par la configuration');
-                this.audioInitialized = false;
-                return;
-            }
-
-            // Vérifier que Howler est disponible
-            if (typeof Howl === 'undefined') {
-                console.warn('[Audio] Howler.js non chargé');
-                this.audioInitialized = false;
-                return;
-            }
-
-            try {
-                // Chemins vers les fichiers sons statiques existants
-                const soundPaths = [
-                    '/static/sounds/flip-1.mp3',
-                    '/static/sounds/flip-4.mp3'
-                ];
-
-                // Pré-charger les sons sélectionnés avec Howler.js
-                this.flipSounds = soundPaths.map((src, index) => {
-                    return new Howl({
-                        src: [src],
-                        volume: 0.6,
-                        preload: true,
-                        onload: () => console.log(`[Audio] ✓ Son flip chargé`),
-                        onloaderror: (id, error) => {
-                            console.warn(`[Audio] Erreur chargement son:`, error);
-                        }
-                    });
-                });
-
-                this.audioInitialized = true;
-                console.log('[Audio] ✓ Système Howler.js initialisé avec', soundPaths.length, 'sons');
-
-            } catch (error) {
-                console.error('[Audio] Erreur d\'initialisation:', error);
-                this.audioInitialized = false;
-            }
-        }
-
-        // Jouer un son de page flip (variante aléatoire)
-        playPageFlipSound() {
-            // Vérifications avant de jouer
-            if (!this.soundEnabled || this.isMuted || !this.audioInitialized) {
-                return;
-            }
-
-            if (this.flipSounds.length === 0) {
-                console.warn('[Audio] Aucun son disponible');
-                return;
-            }
-
-            try {
-                // Sélectionner une variante aléatoire pour la variété
-                const randomIndex = Math.floor(Math.random() * this.flipSounds.length);
-                const sound = this.flipSounds[randomIndex];
-
-                if (sound && sound.state() === 'loaded') {
-                    sound.play();
-                    console.log('[Audio] Son page flip joué (variante', randomIndex + 1, ')');
-                }
-            } catch (error) {
-                console.error('[Audio] Erreur lecture son:', error);
-            }
-        }
-
-        // Basculer le mode muet
-        toggleMute() {
-            // Ne rien faire si le son est désactivé dans la config
-            if (!this.soundEnabled) return;
-
-            this.isMuted = !this.isMuted;
-            const soundBtn = document.getElementById('soundBtn');
-            const icon = soundBtn?.querySelector('i');
-
-            if (icon) {
-                if (this.isMuted) {
-                    icon.className = 'fa-solid fa-volume-xmark';
-                    soundBtn.style.opacity = '0.5';
-                    // Mettre en sourdine tous les sons Howler
-                    Howler.mute(true);
-                } else {
-                    icon.className = 'fa-solid fa-volume-high';
-                    soundBtn.style.opacity = '1';
-                    // Réactiver les sons Howler
-                    Howler.mute(false);
-                }
-            }
-
-            console.log('[Audio] Mode muet:', this.isMuted ? 'ON' : 'OFF');
         }
 
         handleFullscreenChange() {
@@ -2016,44 +1276,56 @@
             }
         }
 
-        // ====================================================================
-        // MEDIA HELPERS
-        // ====================================================================
-        openVideoModal(url) {
-            let embedUrl = url;
-            const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\s]+)/);
-            if (ytMatch) embedUrl = `https://www.youtube.com/embed/${ytMatch[1]}?autoplay=1`;
-
-            const vimeoMatch = url.match(/vimeo\.com\/(\d+)/);
-            if (vimeoMatch) embedUrl = `https://player.vimeo.com/video/${vimeoMatch[1]}?autoplay=1`;
-
-            const modal = document.createElement('div');
-            modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.9);display:flex;align-items:center;justify-content:center;z-index:10000;';
-            modal.innerHTML = `
-                <div style="position:relative;width:80vw;max-width:900px;aspect-ratio:16/9;">
-                    <iframe src="${embedUrl}" style="width:100%;height:100%;border:none;" allowfullscreen allow="autoplay"></iframe>
-                    <button onclick="this.parentElement.parentElement.remove()" style="position:absolute;top:-40px;right:0;background:none;border:none;color:white;font-size:24px;cursor:pointer;">
-                        <i class="fa-solid fa-xmark"></i>
-                    </button>
-                </div>
-            `;
-            modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
-            document.body.appendChild(modal);
+        goBack() {
+            if (this.isPreviewMode && window.opener) {
+                window.close();
+            } else if (history.length > 1) {
+                history.back();
+            } else {
+                window.location.href = '/gallery';
+            }
         }
 
-        playAudio(url) {
-            if (this.currentAudio) {
-                this.currentAudio.pause();
-                this.currentAudio = null;
+        initAudio() {
+            if (!this.soundEnabled || typeof Howl === 'undefined') {
+                this.audioInitialized = false;
+                return;
             }
-            this.currentAudio = new Audio(url);
-            this.currentAudio.play().catch(console.error);
+
+            try {
+                this.flipSounds = ['/static/sounds/flip-1.mp3', '/static/sounds/flip-4.mp3'].map(src => 
+                    new Howl({ src: [src], volume: 0.6, preload: true })
+                );
+                this.audioInitialized = true;
+            } catch (error) {
+                this.audioInitialized = false;
+            }
+        }
+
+        playPageFlipSound() {
+            if (!this.soundEnabled || this.isMuted || !this.audioInitialized || this.flipSounds.length === 0) return;
+
+            try {
+                const sound = this.flipSounds[Math.floor(Math.random() * this.flipSounds.length)];
+                if (sound && sound.state() === 'loaded') sound.play();
+            } catch (error) {}
+        }
+
+        toggleMute() {
+            if (!this.soundEnabled) return;
+
+            this.isMuted = !this.isMuted;
+            const soundBtn = document.getElementById('soundBtn');
+            const icon = soundBtn?.querySelector('i');
+
+            if (icon) {
+                icon.className = this.isMuted ? 'fa-solid fa-volume-xmark' : 'fa-solid fa-volume-high';
+                soundBtn.style.opacity = this.isMuted ? '0.5' : '1';
+                Howler.mute(this.isMuted);
+            }
         }
     }
 
-    // ========================================================================
-    // INITIALIZE
-    // ========================================================================
     const reader = new ReaderManager();
     document.addEventListener('DOMContentLoaded', () => reader.init());
     </script>
