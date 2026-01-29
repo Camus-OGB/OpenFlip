@@ -6,6 +6,7 @@ load_dotenv()
 
 class Settings:
     APP_NAME: str = "OpenFlip"
+    APP_URL: str = os.getenv("APP_URL", "http://localhost:8000")
     MAX_FILE_SIZE: int = int(os.getenv("MAX_FILE_SIZE", 50 * 1024 * 1024))
     
     BASE_DIR: Path = Path(__file__).parent.parent

@@ -586,6 +586,12 @@
 
         <div class="control-divider"></div>
 
+        <button class="control-btn" id="shareBtn" title="Partager">
+            <i class="fa-solid fa-share-nodes"></i>
+        </button>
+
+        <div class="control-divider"></div>
+
         <button class="control-btn" id="fullscreenBtn" title="Plein écran">
             <i class="fa-solid fa-expand"></i>
         </button>
@@ -607,6 +613,7 @@
             this.currentPage = 0;
             this.totalPages = 0;
             this.docId = null;
+            this.shareToken = null;
             this.pagesData = [];
 
             this.zoomLevels = [0.5, 0.75, 1, 1.25, 1.5, 2];
@@ -654,6 +661,7 @@
             try {
                 const urlParams = new URLSearchParams(window.location.search);
                 let docId = urlParams.get('id');
+                const shareToken = urlParams.get('token');
 
                 if (!docId) {
                     const pathParts = window.location.pathname.split('/').filter(p => p);
@@ -662,6 +670,7 @@
                 }
 
                 this.docId = docId;
+                this.shareToken = shareToken;
                 if (!this.docId) throw new Error('ID du document manquant');
 
                 console.log(`[Reader] Loading: ${this.docId}`);
@@ -677,8 +686,17 @@
                 } catch (e) {}
 
                 if (!doc) {
-                    const res = await fetch(`/api/reader/${this.docId}`);
-                    if (!res.ok) throw new Error('Document introuvable');
+                    let apiUrl = `/api/reader/${this.docId}`;
+                    if (this.shareToken) {
+                        apiUrl += `?token=${encodeURIComponent(this.shareToken)}`;
+                    }
+                    const res = await fetch(apiUrl);
+                    if (!res.ok) {
+                        if (res.status === 403) {
+                            throw new Error('Accès refusé - lien de partage invalide ou expiré');
+                        }
+                        throw new Error('Document introuvable');
+                    }
                     doc = await res.json();
                 }
 
@@ -756,6 +774,19 @@
                 document.getElementById('soundBtn').style.display = 'none';
                 this.isMuted = true;
             }
+        }
+
+        getImageUrl(pageData) {
+            const pageNum = pageData.page_num || 1;
+            let url = pageData.image_url || pageData.image_path || `/pages/${this.docId}/page_${pageNum}.webp`;
+            
+            // Ajouter le token si nécessaire
+            if (this.shareToken) {
+                const separator = url.includes('?') ? '&' : '?';
+                url += `${separator}token=${encodeURIComponent(this.shareToken)}`;
+            }
+            
+            return url;
         }
 
         async setMode(modeName) {
@@ -848,7 +879,7 @@
 
                 // Load images into PageFlip
                 const imageUrls = this.pagesData.map(pageData => 
-                    pageData.image_url || pageData.image_path || `/pages/${this.docId}/page_${pageData.page_num || (this.pagesData.indexOf(pageData) + 1)}.webp`
+                    this.getImageUrl(pageData)
                 );
                 this.engine.loadFromImages(imageUrls);
 
@@ -1064,7 +1095,7 @@
                 slide.className = 'swiper-slide';
 
                 const img = document.createElement('img');
-                img.src = pageData.image_url || pageData.image_path || `/pages/${this.docId}/page_${pageNum}.webp`;
+                img.src = this.getImageUrl(pageData);
                 img.alt = `Page ${pageNum}`;
                 img.loading = pageNum <= 3 ? 'eager' : 'lazy';
                 img.draggable = false;
@@ -1224,6 +1255,7 @@
 
             document.getElementById('backBtn').addEventListener('click', () => this.goBack());
             document.getElementById('soundBtn').addEventListener('click', () => this.toggleMute());
+            document.getElementById('shareBtn').addEventListener('click', () => this.shareFlipbook());
             document.getElementById('zoomInBtn').addEventListener('click', () => this.zoomIn());
             document.getElementById('zoomOutBtn').addEventListener('click', () => this.zoomOut());
             document.getElementById('prevBtn').addEventListener('click', () => this.prevPage());
@@ -1323,6 +1355,197 @@
             } catch (error) {
                 this.audioInitialized = false;
             }
+        }
+
+        shareFlipbook() {
+            const shareUrl = window.location.href;
+            const title = document.getElementById('docTitle').textContent || 'Flipbook';
+            
+            // Essayer d'utiliser l'API Web Share si disponible
+            if (navigator.share) {
+                navigator.share({
+                    title: title,
+                    text: `Découvre ce flipbook interactif : ${title}`,
+                    url: shareUrl
+                }).catch(err => console.log('Erreur partage:', err));
+            } else {
+                // Fallback: créer une modal de copie du lien
+                this.showShareModal(shareUrl, title);
+            }
+        }
+
+        showShareModal(url, title) {
+            // Créer une modal de partage
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0, 0, 0, 0.7);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 9999;
+            `;
+
+            const modalContent = document.createElement('div');
+            modalContent.style.cssText = `
+                background: #1e293b;
+                border-radius: 12px;
+                padding: 24px;
+                max-width: 500px;
+                width: 90%;
+                color: white;
+                box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            `;
+
+            const closeBtn = document.createElement('button');
+            closeBtn.style.cssText = `
+                position: absolute;
+                top: 12px;
+                right: 12px;
+                background: transparent;
+                border: none;
+                color: white;
+                font-size: 24px;
+                cursor: pointer;
+                padding: 0;
+                width: 32px;
+                height: 32px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            `;
+            closeBtn.innerHTML = '✕';
+            closeBtn.addEventListener('click', () => modal.remove());
+            modalContent.appendChild(closeBtn);
+
+            const heading = document.createElement('h2');
+            heading.textContent = 'Partager ce flipbook';
+            heading.style.cssText = `
+                margin: 0 0 16px 0;
+                font-size: 20px;
+                font-weight: 600;
+            `;
+            modalContent.appendChild(heading);
+
+            const urlContainer = document.createElement('div');
+            urlContainer.style.cssText = `
+                display: flex;
+                gap: 8px;
+                margin-bottom: 16px;
+            `;
+
+            const urlInput = document.createElement('input');
+            urlInput.type = 'text';
+            urlInput.value = url;
+            urlInput.readOnly = true;
+            urlInput.style.cssText = `
+                flex: 1;
+                padding: 10px 12px;
+                background: #0f172a;
+                border: 1px solid #334155;
+                border-radius: 6px;
+                color: white;
+                font-family: monospace;
+                font-size: 12px;
+            `;
+            urlContainer.appendChild(urlInput);
+
+            const copyBtn = document.createElement('button');
+            copyBtn.textContent = 'Copier';
+            copyBtn.style.cssText = `
+                padding: 10px 16px;
+                background: #4f46e5;
+                border: none;
+                border-radius: 6px;
+                color: white;
+                font-weight: 600;
+                cursor: pointer;
+                transition: background 0.2s;
+            `;
+            copyBtn.addEventListener('mouseover', () => copyBtn.style.background = '#4338ca');
+            copyBtn.addEventListener('mouseout', () => copyBtn.style.background = '#4f46e5');
+            copyBtn.addEventListener('click', () => {
+                navigator.clipboard.writeText(url).then(() => {
+                    copyBtn.textContent = '✓ Copié!';
+                    setTimeout(() => {
+                        copyBtn.textContent = 'Copier';
+                    }, 2000);
+                });
+            });
+            urlContainer.appendChild(copyBtn);
+
+            modalContent.appendChild(urlContainer);
+
+            const socialLinks = document.createElement('div');
+            socialLinks.style.cssText = `
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 8px;
+            `;
+
+            // Boutons de partage social
+            const shareLinks = [
+                {
+                    name: 'Facebook',
+                    icon: 'fab fa-facebook',
+                    url: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`
+                },
+                {
+                    name: 'Twitter',
+                    icon: 'fab fa-twitter',
+                    url: `https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(title)}`
+                },
+                {
+                    name: 'LinkedIn',
+                    icon: 'fab fa-linkedin',
+                    url: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`
+                },
+                {
+                    name: 'Email',
+                    icon: 'fas fa-envelope',
+                    url: `mailto:?subject=${encodeURIComponent(title)}&body=${encodeURIComponent(url)}`
+                }
+            ];
+
+            shareLinks.forEach(link => {
+                const btn = document.createElement('a');
+                btn.href = link.url;
+                btn.target = '_blank';
+                btn.rel = 'noopener noreferrer';
+                btn.style.cssText = `
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 8px;
+                    padding: 10px 12px;
+                    background: #334155;
+                    border-radius: 6px;
+                    color: white;
+                    text-decoration: none;
+                    font-size: 13px;
+                    font-weight: 500;
+                    transition: background 0.2s;
+                    border: none;
+                    cursor: pointer;
+                `;
+                btn.innerHTML = `<i class="${link.icon}"></i> ${link.name}`;
+                btn.addEventListener('mouseover', () => btn.style.background = '#475569');
+                btn.addEventListener('mouseout', () => btn.style.background = '#334155');
+                socialLinks.appendChild(btn);
+            });
+
+            modalContent.appendChild(socialLinks);
+
+            modal.appendChild(modalContent);
+            document.body.appendChild(modal);
+
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) modal.remove();
+            });
         }
 
         playPageFlipSound() {

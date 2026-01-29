@@ -21,6 +21,8 @@ class Flipbook(SQLModel, table=True):
     title: str = Field(index=True)
     path_pdf: str = Field(default="")  # Chemin vers le PDF original
     style_json: str = Field(default="{}")  # Configuration de style (JSON)
+    share_token: Optional[str] = Field(default=None, index=True)  # Token de partage unique
+    is_public: bool = Field(default=False)  # Si le flipbook est public
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
