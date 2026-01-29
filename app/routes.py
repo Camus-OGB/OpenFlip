@@ -5,7 +5,6 @@ from sqlalchemy.orm import selectinload
 from typing import Optional, List
 from datetime import datetime
 import json
-import secrets
 
 from .config import settings
 from .models import Flipbook, Page, Widget, EditorSaveRequest
@@ -163,37 +162,18 @@ async def list_documents(
     session: Session = Depends(get_session)
 ):
     """
-    Liste tous les flipbooks publics.
+    Liste les flipbooks (galerie vide car tous les flipbooks sont privés par défaut).
+    
+    Tous les flipbooks sont privés et accessibles seulement via le lien de partage.
 
     Args:
         limit: Nombre max de resultats (defaut: 20)
         offset: Decalage pour pagination (defaut: 0)
 
     Returns:
-        Liste des flipbooks publics avec leurs metadonnees
+        Liste vide (aucun flipbook public)
     """
-    # Requete avec chargement des pages pour le count - seulement les flipbooks publics
-    statement = (
-        select(Flipbook)
-        .where(Flipbook.is_public == True)
-        .options(selectinload(Flipbook.pages))
-        .order_by(Flipbook.created_at.desc())
-        .offset(offset)
-        .limit(limit)
-    )
-    flipbooks = session.exec(statement).all()
-
-    return [
-        {
-            "id": fb.id,
-            "title": fb.title,
-            "pages": len(fb.pages),
-            "thumbnail": f"/pages/{fb.id}/page_1.webp",
-            "created_at": fb.created_at.isoformat(),
-            "updated_at": fb.updated_at.isoformat(),
-        }
-        for fb in flipbooks
-    ]
+    return []
 
 
 @router.get("/api/documents/{doc_id}")
@@ -235,17 +215,16 @@ async def get_page_image(doc_id: str, page_num: int, token: str = None, session:
     Args:
         doc_id: ID du flipbook
         page_num: Numero de la page
-        token: Token de partage (optionnel, requis si le flipbook n'est pas public)
+        token: Token de partage (requis pour accéder aux pages)
 
     Returns:
         Image WebP de la page
     """
-    # Vérifier les droits d'accès au flipbook
+    # Vérifier le token du flipbook
     flipbook = session.get(Flipbook, doc_id)
     
-    if flipbook and not flipbook.is_public:
-        if not flipbook.share_token or token != flipbook.share_token:
-            raise HTTPException(status_code=403, detail="Accès refusé")
+    if not flipbook or not token or token != flipbook.share_token:
+        raise HTTPException(status_code=403, detail="Accès refusé")
     
     page_path = settings.PAGES_DIR / doc_id / f"page_{page_num}.webp"
 
@@ -281,70 +260,6 @@ async def delete_document(doc_id: str, session: Session = Depends(get_session)):
     await pdf_service.delete_flipbook_files(doc_id, pdf_path)
 
     return {"status": "deleted", "id": doc_id}
-
-
-# ============================================================================
-# API - PARTAGE ET AUTHENTIFICATION
-# ============================================================================
-
-@router.post("/api/documents/{doc_id}/share")
-async def create_share_link(doc_id: str, is_public: bool = False, session: Session = Depends(get_session)):
-    """
-    Crée un lien de partage pour un flipbook.
-    
-    Args:
-        doc_id: ID du flipbook
-        is_public: Si True, le flipbook est public et accessible par son ID seul
-        
-    Returns:
-        URL de partage et token
-    """
-    flipbook = session.get(Flipbook, doc_id)
-    
-    if not flipbook:
-        raise HTTPException(status_code=404, detail="Flipbook non trouvé")
-    
-    # Générer un token unique si pas public
-    if not is_public and not flipbook.share_token:
-        import secrets
-        flipbook.share_token = secrets.token_urlsafe(24)
-    
-    flipbook.is_public = is_public
-    session.add(flipbook)
-    session.commit()
-    session.refresh(flipbook)
-    
-    share_url = f"{settings.APP_URL}/reader/{doc_id}"
-    if flipbook.share_token:
-        share_url += f"?token={flipbook.share_token}"
-    
-    return {
-        "id": flipbook.id,
-        "share_url": share_url,
-        "is_public": flipbook.is_public,
-        "share_token": flipbook.share_token
-    }
-
-
-@router.post("/api/documents/{doc_id}/revoke-share")
-async def revoke_share_link(doc_id: str, session: Session = Depends(get_session)):
-    """
-    Révoque le lien de partage d'un flipbook (le rend complètement privé).
-    
-    Args:
-        doc_id: ID du flipbook
-    """
-    flipbook = session.get(Flipbook, doc_id)
-    
-    if not flipbook:
-        raise HTTPException(status_code=404, detail="Flipbook non trouvé")
-    
-    flipbook.is_public = False
-    flipbook.share_token = None
-    session.add(flipbook)
-    session.commit()
-    
-    return {"message": "Lien de partage révoqué"}
 
 
 # ============================================================================
@@ -714,7 +629,7 @@ async def get_reader_data(doc_id: str, token: str = None, session: Session = Dep
 
     Args:
         doc_id: ID du flipbook
-        token: Token de partage (optionnel, requis si le flipbook n'est pas public)
+        token: Token de partage (requis pour accéder au flipbook privé)
 
     Returns:
         Donnees completes pour le reader
@@ -731,11 +646,9 @@ async def get_reader_data(doc_id: str, token: str = None, session: Session = Dep
     if not flipbook:
         raise HTTPException(status_code=404, detail="Flipbook non trouve")
     
-    # Vérifier les droits d'accès
-    if not flipbook.is_public:
-        # Flipbook privé : requiert un token valide
-        if not flipbook.share_token or token != flipbook.share_token:
-            raise HTTPException(status_code=403, detail="Accès refusé - lien de partage invalide ou expiré")
+    # Vérifier le token de partage
+    if not token or token != flipbook.share_token:
+        raise HTTPException(status_code=403, detail="Accès refusé - token invalide ou manquant")
 
     pages_data = []
     for page in sorted(flipbook.pages, key=lambda p: p.page_num):

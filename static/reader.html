@@ -725,8 +725,6 @@
                 this.initAudio();
                 this.updateUI();
 
-                console.log('[Reader] ✓ Ready');
-
             } catch (error) {
                 console.error('[Reader] Error:', error);
                 this.showError(error.message);
@@ -851,8 +849,6 @@
             bookHeight = Math.floor(bookHeight);
             const pageWidth = Math.floor(bookWidth / 2);
 
-            console.log(`[Reader] Size: ${bookWidth}x${bookHeight} (page: ${pageWidth}x${bookHeight})`);
-
             try {
                 this.engine = new St.PageFlip(book, {
                     width: pageWidth,
@@ -895,10 +891,9 @@
                     this.updateUI();
                 });
 
-                console.log('[Reader] ✓ StPageFlip ready');
-
             } catch (error) {
                 console.error('[Reader] StPageFlip error:', error);
+                throw error;
                 throw error;
             }
         }
@@ -1074,10 +1069,9 @@
             });
 
             document.body.appendChild(overlay);
-            console.log('[Widgets] Overlay added to body');
         }
 
-        async buildSwiper(container, effect) {
+        async buildSwiper(container, effect = 'coverflow') {
             const swiperContainer = document.createElement('div');
             swiperContainer.className = 'swiper-container';
 
