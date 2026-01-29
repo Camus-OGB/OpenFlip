@@ -1,32 +1,23 @@
 # OpenFlip
 
-**Open source alternative to Heyzine.** Transform your PDFs into interactive flipbooks with realistic page-turning effects. Self-hostable and free.
+Alternative open source à Heyzine. Transformez vos PDFs en flipbooks interactifs avec effets de page réalistes. Auto-hébergeable et gratuit.
 
-![OpenFlip](https://img.shields.io/badge/version-1.1.0-purple) ![License](https://img.shields.io/badge/license-MIT-green) ![Python](https://img.shields.io/badge/python-3.8+-blue) ![Docker](https://img.shields.io/badge/docker-ready-green)
+![Version](https://img.shields.io/badge/version-1.1.0-purple) ![License](https://img.shields.io/badge/license-MIT-green) ![Python](https://img.shields.io/badge/python-3.11+-blue) ![Docker](https://img.shields.io/badge/docker-ready-green)
 
-## ✨ Features
+## ✨ Fonctionnalités
 
-- 📤 **Drag & drop upload** with custom title input
-- 📖 **Hybrid reader** with multiple viewing modes:
-  - **Standard** (turn.js) - Realistic double-page flipbook effect
-  - **Coverflow** - 3D carousel view
-  - **Cards** - Stacked cards effect
-  - **Cube** - 3D cube transition
-  - **Slide/Fade** - Smooth crossfade transition
-- 🎯 **Smart navigation**:
-  - Click-based (left/right halves of page)
-  - Keyboard shortcuts (arrows, space, home/end)
-  - Navigation buttons in control bar
-  - One page advance at a time
-- 🔍 **Zoom** in/out (0.5x to 2x)
-- 🔗 **Interactive widgets** - Clickable links with visible text
-- 📱 **Fully responsive** - Desktop, tablet, mobile
-- 🎨 **Consistent display** - Fixed A4-like dimensions for all PDFs
-- 🏠 **Gallery** - Browse and manage all flipbooks
-- 🐳 **Docker-ready** - Deploy in one command
-- 🔒 **Privacy-first** - Your files stay on your server
+- 📤 Upload par drag & drop avec titre personnalisé
+- 📖 Lecteur hybride avec 5 modes (Standard, Coverflow, Cards, Cube, Slide)
+- 🎯 Navigation intelligente (clic, clavier, boutons)
+- 🔍 Zoom 0.5x à 2x
+- 🔗 Liens interactifs extraits automatiquement du PDF
+- 📱 Responsive (desktop, tablette, mobile)
+- 🎨 Dimensions A4 cohérentes
+- 🏠 Galerie pour gérer les flipbooks
+- 🐳 Docker prêt à l'emploi
+- 🔒 Données sur votre serveur
 
-## Quick Start
+## Démarrage rapide
 
 ```bash
 git clone https://github.com/Camus-OGB/OpenFlip.git
@@ -34,97 +25,103 @@ cd openflip
 docker compose up -d
 ```
 
-App available at **http://localhost:8000**
+App disponible à **http://localhost:8000**
+
+## Installation locale
+
+```bash
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+uvicorn app:app --reload
+```
 
 ## Configuration
 
-Create a `.env` file at root (optional):
+Fichier `.env` (optionnel) :
 
 ```bash
 PORT=8000
 MAX_FILE_SIZE=52428800  # 50MB
+APP_URL=http://localhost:8000
+DATABASE_URL=postgresql://user:pass@host/db  # Production
 ```
 
-## Recent Improvements (v1.1.0)
+## Raccourcis clavier
 
-- ✨ Fixed A4 page dimensions for consistent display across all PDFs
-- 🎯 Improved navigation with click-based page turning
-- 🔘 Added prev/next buttons for easier navigation
-- 🔗 Links now display their text directly on flipbook pages
-- ⚡ Fixed Swiper navigation to advance exactly one page at a time
-- 🔊 Optimized audio system (flip-1.mp3, flip-4.mp3)
-- 📐 Better centering and responsive layout
+| Touche | Action |
+|--------|--------|
+| ← / → | Page précédente/suivante |
+| Space | Page suivante |
+| Home / End | Première/dernière page |
+| +/- | Zoom in/out |
+| F | Plein écran |
+| S | Son |
 
-## Keyboard Shortcuts
-
-| Key | Action |
-|-----|--------|
-| ← / ↑ | Previous page |
-| → / ↓ / Space | Next page |
-| Home | First page |
-| End | Last page |
-| +/= | Zoom in |
-| - | Zoom out |
-| 0 | Reset zoom |
-| F | Fullscreen |
-| S | Toggle sound |
-
-## Mouse Navigation
-
-- **Left half of page** - Click to go to previous page
-- **Right half of page** - Click to go to next page
-- **Prev/Next buttons** - Use navigation buttons in control bar
-
-## Docker Commands
+## Commandes Docker
 
 ```bash
-docker compose up -d          # Start
-docker compose logs -f        # View logs
-docker compose down           # Stop
-docker compose up -d --build  # Rebuild
+docker compose up -d          # Démarrer
+docker compose logs -f        # Logs
+docker compose down           # Arrêter
+docker compose up -d --build  # Reconstruire
 ```
 
-## Tech Stack
+## Stack technique
 
-- **Backend**: FastAPI + Python 3.11
-- **Frontend**: HTML/CSS/JS + Tailwind CSS
-- **Flipbook**: turn.js + Swiper.js (hybrid)
-- **PDF Conversion**: pdf2image + Poppler
-- **Container**: Docker
+- **Backend** : FastAPI + Python 3.11
+- **Frontend** : HTML/CSS/JS + Tailwind
+- **Lecteur** : turn.js + Swiper.js
+- **PDF** : PyMuPDF → WebP
+- **DB** : SQLite (dev) / PostgreSQL (prod)
+- **Container** : Docker
 
-## Project Structure
+## Structure du projet
 
 ```
 openflip/
-├── app/                  # Python module
-│   ├── main.py           # FastAPI app
-│   ├── config.py         # Configuration
-│   ├── models.py         # Document store
-│   ├── routes.py         # API routes
-│   └── services.py       # PDF conversion
-├── static/               # Frontend
-│   ├── index.html        # Homepage
-│   ├── upload.html       # PDF upload (2-step)
-│   ├── gallery.html      # All flipbooks
-│   └── reader.html       # Hybrid flipbook reader
-├── storage/              # Generated files
+├── app/           # Backend
+│   ├── main.py
+│   ├── routes.py
+│   ├── models.py
+│   └── services.py
+├── static/        # Frontend
+│   ├── index.html
+│   ├── upload.html
+│   ├── reader.html
+│   └── gallery.html
+├── storage/       # Fichiers générés
 ├── Dockerfile
-├── docker-compose.yml
 └── requirements.txt
 ```
 
 ## API
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/` | GET | Homepage |
-| `/upload` | GET | Upload page |
-| `/gallery` | GET | Gallery page |
-| `/reader/{id}` | GET | Flipbook reader |
-| `/api/upload` | POST | Upload PDF (with optional title) |
-| `/api/documents` | GET | List all flipbooks |
-| `/api/documents/{id}` | GET | Get flipbook details |
+| Endpoint | Méthode | Description |
+|----------|---------|-------------|
+| `/api/upload` | POST | Uploader un PDF |
+| `/api/documents` | GET | Liste des flipbooks |
+| `/api/documents/{id}` | GET/DELETE | Détails/Supprimer |
+| `/reader/{id}` | GET | Lecteur |
+| `/gallery` | GET | Galerie |
 
-## License
+## Dépannage
+
+| Problème | Solution |
+|----------|----------|
+| Conversion PDF échouée | Vérifier le PDF, voir logs : `docker compose logs` |
+| Permission denied | `chmod 755 storage/` |
+| Pages ne s'affichent pas | Vérifier `/app/storage/pages/{id}/` |
+| DB lockée | Utiliser PostgreSQL en production |
+
+## Dépendances
+
+- FastAPI, Uvicorn
+- PyMuPDF (PDF → WebP)
+- Pillow (images)
+- SQLModel (DB ORM)
+- python-dotenv
+
+## Licence
 
 MIT
