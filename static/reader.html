@@ -208,10 +208,17 @@
 
         .swiper-slide img {
             max-width: 90vw;
-            max-height: 80vh;
+            max-height: 75vh;
             object-fit: contain;
             box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
             user-select: none;
+        }
+
+        @media (max-width: 768px) {
+            .swiper-slide img {
+                max-width: 95vw;
+                max-height: 70vh;
+            }
         }
 
         .swiper-pagination-bullet {
@@ -454,11 +461,23 @@
 
         @media (max-width: 768px) {
             .header-title { display: none; }
+            .header {
+                height: 50px;
+                padding: 0 12px;
+                gap: 12px;
+            }
+            .container {
+                top: 50px;
+                bottom: 70px;
+                padding: 10px;
+            }
             .control-bar {
-                flex-wrap: wrap;
-                max-width: calc(100vw - 32px);
+                flex-wrap: nowrap;
+                max-width: calc(100vw - 24px);
                 padding: 8px 12px;
-                gap: 8px;
+                gap: 6px;
+                bottom: 12px;
+                border-radius: 30px;
             }
             .control-btn {
                 width: 34px;
@@ -470,7 +489,26 @@
                 padding: 6px 10px;
                 font-size: 12px;
             }
-            .progress-container { width: 80px; }
+            .mode-dropdown-btn .mode-label { display: none; }
+            .progress-container { width: 60px; }
+            .zoom-display { display: none; }
+        }
+
+        @media (max-width: 480px) {
+            .control-bar {
+                gap: 4px;
+                padding: 6px 10px;
+            }
+            .control-btn {
+                width: 32px;
+                height: 32px;
+                font-size: 11px;
+            }
+            .progress-container { display: none; }
+            .mode-dropdown-btn {
+                padding: 5px 8px;
+                font-size: 11px;
+            }
         }
 
         body.fullscreen {
@@ -530,7 +568,7 @@
         <div class="mode-dropdown" id="modeDropdown">
             <button class="mode-dropdown-btn" id="modeDropdownBtn">
                 <i class="fa-solid fa-book-open mode-icon" id="currentModeIcon"></i>
-                <span id="currentModeLabel">Standard</span>
+                <span id="currentModeLabel" class="mode-label">Standard</span>
                 <i class="fa-solid fa-chevron-up chevron"></i>
             </button>
             <div class="mode-dropdown-menu" id="modeDropdownMenu">
@@ -831,9 +869,13 @@
             wrapper.appendChild(book);
             container.appendChild(wrapper);
 
-            // Calculate optimal dimensions
-            const viewportHeight = window.innerHeight - 64 - 150;
-            const viewportWidth = window.innerWidth - 200;
+            // Calculate optimal dimensions - responsive margins
+            const isMobile = window.innerWidth < 768;
+            const headerHeight = isMobile ? 50 : 64;
+            const controlBarHeight = isMobile ? 70 : 150;
+            const horizontalMargin = isMobile ? 20 : 200;
+            const viewportHeight = window.innerHeight - headerHeight - controlBarHeight;
+            const viewportWidth = window.innerWidth - horizontalMargin;
 
             const pageAspectRatio = 595 / 842; // A4
             
@@ -854,22 +896,22 @@
                     width: pageWidth,
                     height: bookHeight,
                     size: 'fixed',
-                    minWidth: 315,
+                    minWidth: isMobile ? 200 : 315,
                     maxWidth: 2000,
-                    minHeight: 400,
+                    minHeight: isMobile ? 280 : 400,
                     maxHeight: 1600,
                     showCover: false,
                     mobileScrollSupport: false,
-                    swipeDistance: 30,
+                    swipeDistance: isMobile ? 15 : 30,
                     clickEventForward: true,
-                    usePortrait: false,
+                    usePortrait: isMobile,
                     startPage: 0,
-                    drawShadow: true,
-                    flippingTime: 600,
+                    drawShadow: !isMobile,
+                    flippingTime: isMobile ? 400 : 600,
                     useMouseEvents: true,
                     autoSize: false,
-                    maxShadowOpacity: 0.5,
-                    showPageCorners: true,
+                    maxShadowOpacity: isMobile ? 0.3 : 0.5,
+                    showPageCorners: !isMobile,
                     disableFlipByClick: false
                 });
 
@@ -1262,9 +1304,15 @@
                 clearTimeout(this.resizeTimeout);
                 this.resizeTimeout = setTimeout(() => {
                     if (this.engineType === 'pageflip' && this.engine) {
-                        this.engine.updateState();
+                        // Rebuild on significant size changes (e.g. orientation change)
+                        const savedPage = this.currentPage;
+                        this.setMode(this.currentMode).then(() => {
+                            this.goToPage(savedPage);
+                        });
                     }
-                }, 200);
+                    // Update widgets overlay position
+                    this.addWidgetsOverlay();
+                }, 300);
             });
         }
 

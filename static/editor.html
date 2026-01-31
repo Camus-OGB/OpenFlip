@@ -236,9 +236,62 @@
             background-size: 20px 20px;
             background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
         }
+
+        /* Mobile Drawer Styles */
+        @media (max-width: 1023px) {
+            .editor-sidebar-left,
+            .editor-sidebar-right {
+                position: fixed;
+                top: 56px;
+                bottom: 0;
+                z-index: 40;
+                transition: transform 0.3s ease;
+                box-shadow: 4px 0 24px rgba(0,0,0,0.15);
+            }
+            .editor-sidebar-left {
+                left: 0;
+                width: 280px;
+                transform: translateX(-100%);
+            }
+            .editor-sidebar-left.drawer-open {
+                transform: translateX(0);
+            }
+            .editor-sidebar-right {
+                right: 0;
+                width: 280px;
+                transform: translateX(100%);
+            }
+            .editor-sidebar-right.drawer-open {
+                transform: translateX(0);
+            }
+            .drawer-backdrop {
+                position: fixed;
+                inset: 0;
+                background: rgba(0,0,0,0.4);
+                z-index: 35;
+            }
+            #pageImage {
+                max-height: 60vh;
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .editor-sidebar-left,
+            .editor-sidebar-right {
+                position: relative;
+                transform: none !important;
+                box-shadow: none;
+            }
+            .drawer-backdrop {
+                display: none !important;
+            }
+            .drawer-toggle {
+                display: none !important;
+            }
+        }
     </style>
 </head>
-<body class="bg-slate-100 font-sans antialiased min-h-screen" x-data="editorApp()" x-init="init()">
+<body class="bg-slate-100 font-sans antialiased min-h-screen" x-data="{ ...editorApp(), drawerLeft: false, drawerRight: false }" x-init="init()">
 
     <!-- Loading Overlay -->
     <div x-show="loading" x-cloak class="fixed inset-0 bg-slate-50/95 flex items-center justify-center z-[9999]">
@@ -266,7 +319,7 @@
             </div>
 
             <!-- Center - Title -->
-            <div class="flex-1 max-w-md mx-4">
+            <div class="flex-1 max-w-md mx-2 sm:mx-4 hidden sm:block">
                 <input
                     type="text"
                     x-model="flipbook.title"
@@ -304,10 +357,13 @@
     <!-- Main Layout - 3 Columns -->
     <div class="flex h-[calc(100vh-56px)]">
 
+        <!-- Drawer Backdrop -->
+        <div x-show="drawerLeft || drawerRight" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" @click="drawerLeft = false; drawerRight = false" class="drawer-backdrop lg:hidden"></div>
+
         <!-- ============================================================ -->
         <!-- LEFT COLUMN - Tools (260px) -->
         <!-- ============================================================ -->
-        <aside class="w-[260px] bg-white border-r border-slate-200 flex flex-col overflow-hidden">
+        <aside class="editor-sidebar-left w-[260px] lg:w-[260px] bg-white border-r border-slate-200 flex flex-col overflow-hidden" :class="{ 'drawer-open': drawerLeft }">
 
             <!-- Pages Section -->
             <div class="border-b border-slate-100">
@@ -579,11 +635,19 @@
             </div>
         </aside>
 
+        <!-- Mobile Toggle Buttons -->
+        <button @click="drawerLeft = !drawerLeft; drawerRight = false" class="drawer-toggle lg:hidden fixed bottom-20 left-4 z-30 w-12 h-12 bg-indigo-600 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-indigo-700 transition-colors">
+            <i class="fa-solid fa-layer-group"></i>
+        </button>
+        <button @click="drawerRight = !drawerRight; drawerLeft = false" class="drawer-toggle lg:hidden fixed bottom-20 right-4 z-30 w-12 h-12 bg-slate-700 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-slate-800 transition-colors">
+            <i class="fa-solid fa-sliders"></i>
+        </button>
+
         <!-- ============================================================ -->
         <!-- CENTER COLUMN - Canvas -->
         <!-- ============================================================ -->
         <main
-            class="flex-1 overflow-auto flex items-center justify-center p-8 transition-colors duration-300"
+            class="flex-1 overflow-auto flex items-center justify-center p-4 sm:p-8 transition-colors duration-300"
             :style="getCanvasBackgroundStyle()"
         >
             <div
@@ -648,7 +712,7 @@
         <!-- ============================================================ -->
         <!-- RIGHT COLUMN - Properties (280px) -->
         <!-- ============================================================ -->
-        <aside class="w-[280px] bg-white border-l border-slate-200 flex flex-col overflow-hidden">
+        <aside class="editor-sidebar-right w-[280px] lg:w-[280px] bg-white border-l border-slate-200 flex flex-col overflow-hidden" :class="{ 'drawer-open': drawerRight }">
             <div class="px-4 py-3 border-b border-slate-100 bg-slate-50">
                 <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wide">
                     <i class="fa-solid fa-sliders mr-2 text-indigo-500"></i>Proprietes
@@ -1128,6 +1192,11 @@
 
             selectWidget(id) {
                 this.selectedWidgetId = id;
+                // On mobile, open properties drawer when a widget is selected
+                if (window.innerWidth < 1024) {
+                    this.drawerRight = true;
+                    this.drawerLeft = false;
+                }
             },
 
             deselectAll() {
@@ -1328,6 +1397,7 @@
                 });
 
                 this.closeModal();
+                this.drawerLeft = false;
                 this.showToast('Widget ajoute', 'success');
             },
 
